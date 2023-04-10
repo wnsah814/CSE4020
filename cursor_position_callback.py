@@ -14,13 +14,12 @@ def cursor_position_callback(window, xpos, ypos):
         drag.set_position(xpos, ypos)
 
         SCALER = 0.1
-        # SCALER = 0.01
 
-        # if not dx == 0:
-        #     global_cam.add_azi(np.radians(dx * SCALER))
+        if not dx == 0:
+            global_cam.add_azi(glm.radians(dx * SCALER))
+                
         if not dy == 0:
-            global_cam.add_ele(dy * SCALER)
-            # global_cam.add_ele(np.radians(dy * SCALER))
+            global_cam.add_ele(glm.radians(dy * SCALER))
         global_cam.up = glm.vec3(0, -1, 0) if np.sin(global_cam.elevation) < 0 else glm.vec3(0, 1, 0)
                     
     elif glfw.get_mouse_button(window, glfw.MOUSE_BUTTON_RIGHT) == glfw.PRESS:

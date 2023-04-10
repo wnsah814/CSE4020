@@ -1,14 +1,21 @@
 from variables import global_cam
 
 def scroll_callback(window, xoffset, yoffset):
-    MAX = 20.0
-    MIN = 1.0
     print(global_cam.distance, yoffset)
-    if yoffset == -1.0 and global_cam.distance < MAX:
-        print("mouse scrolled down")
-        global_cam.add_distance(0.1)
-        # global_cam.add_radius(0.1)
-    elif yoffset == 1.0 and global_cam.distance > MIN:
-        print("mouse scrolled up")
-        global_cam.add_distance(-0.1)
-        # global_cam.add_radius(-0.1)
+    # if glfw.get_mouse_button(window, glfw.MOUSE_BUTTON_MIDDLE) == glfw.PRESS:
+    
+    if global_cam.toggle:
+        print("orthogonal mode", global_cam.scale)
+        if yoffset == 1.0:
+        # zoom-out
+            global_cam.scale += .01
+        elif yoffset == -1.0 and global_cam.scale > 0.1:
+        # zoom-in
+            global_cam.scale -= .01
+    else:
+        # print("perspective mode")
+        # print(global_cam.radius)
+        if yoffset == 1.0 and global_cam.radius > 0.1:
+            global_cam.add_radius(-0.01)
+        elif yoffset == -1.0 and global_cam.radius < 10.:
+            global_cam.add_radius(0.01)

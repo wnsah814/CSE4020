@@ -5,28 +5,33 @@ class Camera:
         self.azimuth = azimuth
         self.elevation = elevation
         self.height = height
-        self.distance = 5
+        
+        self.scale = 1.
         self.pan = glm.vec3(0.0, 0.0, 0.0)
+        
+        self.radius = 0.1
+        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
+        self.center = glm.vec3(0, 0, 0)
+        self.up = glm.vec3(0, 1, 0)
+        self.toggle = True
+        self.distance = 1
+        self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
+        # self.view = glm.lookAt(self.eye, self.center, self.up)
+    def reset(self):
+        self.azimuth = 0.
+        self.elevation = glm.radians(45)
+        self.height = .1
+        
+        self.scale = 1.
+        self.pan = glm.vec3(0.0, 0.0, 0.0)
+        
         self.radius = 0.1
         self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
         self.center = glm.vec3(0, 0, 0)
         self.up = glm.vec3(0, 1, 0)
         self.toggle = True
         self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
-        # self.view = glm.lookAt(self.eye, self.center, self.up)
-    def reset(self):
-        self.azimuth = 0.
-        self.elevation = 45.
-        self.height = .1
-        self.distance = 5
-        self.pan = glm.vec3(0.0, 0.0, 0.0)
-        self.radius = 1
-        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
-        self.center = glm.vec3(0, 0, 0)
-        self.up = glm.vec3(0, 1, 0)
-        self.toggle = True
-        self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
-
+        
     def _set_projection(self):
         if self.toggle:
             self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
@@ -52,7 +57,7 @@ class Camera:
     
     def set_eye(self):
         # self.eye = glm.vec3(0.1*np.sin(self.angle),self.height,0.1*np.cos(self.angle))
-        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.size(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
+        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
     
     def add_azi(self, angle):
         self.azimuth += angle
@@ -63,7 +68,7 @@ class Camera:
         self.set_eye()
 
     def add_radius(self, r):
-        self.radius = r;
+        self.radius += r;
         self.set_eye()
     # def add_height(self, height):
     #     self.height += height

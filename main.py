@@ -93,9 +93,9 @@ def main():
         P = global_cam.projection
         # view matrix
         # rotate camera position with g_cam_ang / move camera up & down with g_cam_height
-        V = glm.lookAt(global_cam.eye + global_cam.pan, global_cam.center + global_cam.pan, global_cam.up) * glm.scale(glm.vec3(1,1,1) * 0.01)
+        V = glm.lookAt(global_cam.eye + global_cam.pan, global_cam.center + global_cam.pan, global_cam.up) * glm.scale(glm.vec3(global_cam.scale, global_cam.scale, global_cam.scale))
         # V = global_cam.view
-        print(global_cam.azimuth, global_cam.elevation)
+        # print(global_cam.azimuth, global_cam.elevation, global_cam.radius)
         # current frame: P*V*I (now this is the world frame)
         I = glm.mat4()
 
@@ -103,8 +103,7 @@ def main():
         M = glm.mat4()
         GRID_START = -10
         GRID_END = 10
-        # GRID_STEP = 0.25
-        GRID_STEP = 2.
+        GRID_STEP = 0.25
 
         glBindVertexArray(vao_grid)
         # grid X axis
@@ -144,7 +143,7 @@ def main():
         S = glm.scale(glm.vec3(np.sin(t), np.sin(t), np.sin(t)))
 
         # M = R @ T
-        M = I
+        M = R
         # M = S
         # M = R @ T
         # M = T @ R
