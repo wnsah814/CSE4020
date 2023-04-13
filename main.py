@@ -90,14 +90,13 @@ def main():
         # view matrix
         V = global_cam.get_view_matrix()
 
-        I = glm.mat4()
+        M = glm.mat4()
         # current frame: P*V*I (now this is the world frame)
 
         # draw grid
-        M = glm.mat4()
         GRID_START = -20
-        GRID_END = 20
-        GRID_STEP = 0.5
+        GRID_END = 21
+        GRID_STEP = 1
 
         glBindVertexArray(vao_grid)
         # X axis of grid
@@ -115,42 +114,14 @@ def main():
             MVP = P*V*M
             glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
             glDrawArrays(GL_LINES, 2, 2)
-
-        # # draw frame
-        # # world frame
-        # MVP = P*V*I
-        # glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
-
-        # glBindVertexArray(vao_frame)
-        # glDrawArrays(GL_LINES, 0, 6)
           
-        # # animating
-        # t = glfwGetTime()
-
-        # # rotation
-        # th = np.radians(t*90)
-        # R = glm.rotate(th, glm.vec3(0,0,1))
-
-        # # tranlation
-        # # T = glm.translate(glm.vec3(offset_x, offset_y, offset_z));
-
-        # # scaling
-        # S = glm.scale(glm.vec3(np.sin(t), np.sin(t), np.sin(t)))
-
-        # M = R @ T
-        M = I
-        # M = S
-        # M = R @ T
-        # M = T @ R
 
         # draw triangle
-        # current frame: P*V*M
-        MVP = P*V*M
-        glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
-
-        # draw triangle w.r.t. the current frame
-        glBindVertexArray(vao_triangle)
-        glDrawArrays(GL_TRIANGLES, 0, 3)
+        # M = glm.mat4()
+        # MVP = P*V*M
+        # glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
+        # glBindVertexArray(vao_triangle)
+        # glDrawArrays(GL_TRIANGLES, 0, 3)
 
         # swap front and back buffers
         glfwSwapBuffers(window)

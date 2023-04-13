@@ -20,7 +20,7 @@ class Camera:
         return glm.lookAt(self.get_eye() + self.pan, self.center + self.pan, self.up)
     
     def get_projection_matrix(self): 
-        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -self.distance * 2, self.distance * 2)
+        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -self.distance * 3, self.distance * 3)
 
     def toggle_projection(self):
         self.is_projection = not self.is_projection
