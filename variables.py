@@ -4,88 +4,46 @@ class Camera:
     def __init__(self, azimuth, elevation, height):
         self.azimuth = azimuth
         self.elevation = elevation
-        self.height = height
-        
-        self.scale = 1.
-        self.pan = glm.vec3(0.0, 0.0, 0.0)
-        
-        self.radius = 0.1
-        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
-        self.center = glm.vec3(0, 0, 0)
-        self.up = glm.vec3(0, 1, 0)
-        self.toggle = True
-        self.distance = 1
-        self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
-        # self.view = glm.lookAt(self.eye, self.center, self.up)
-    def reset(self):
-        self.azimuth = 0.
-        self.elevation = glm.radians(45)
-        self.height = .1
-        
-        self.scale = 1.
-        self.pan = glm.vec3(0.0, 0.0, 0.0)
-        
-        self.radius = 0.1
-        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
-        self.center = glm.vec3(0, 0, 0)
-        self.up = glm.vec3(0, 1, 0)
-        self.toggle = True
-        self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
-        
-    def _set_projection(self):
-        if self.toggle:
-            self.projection = glm.ortho(-self.distance,self.distance,-self.distance,self.distance,-self.distance,self.distance)
-        else:
-            self.projection = glm.perspective(glm.radians(45.), 1., .01, 100.)
-    
-    def toggle_projection(self):
-        self.toggle = not self.toggle
-        self._set_projection()
+        self.height = height        
 
-    def add_distance(self, dist):
-        self.distance += dist
-        self._set_projection()
-    # def get_right(self):
-    #     return glm.cross(self.up, self.eye-self.center)
+        self.pan = glm.vec3(0.0, 0.0, 0.0)
+        self.distance = 1.0
+
+        self.center = glm.vec3(0, 0, 0)
+        self.up = glm.vec3(0, 1, 0)
+        self.is_projection = True
     
-    # def get_up(self):
-    #     return glm.cross(self.eye-self.center, self.get_right())
+    def get_eye(self):
+        return glm.vec3(self.distance * np.sin(self.azimuth) * np.sin(self.elevation), self.distance * np.cos(self.elevation), self.distance * np.cos(self.azimuth) * np.sin(self.elevation))
     
-    # def move_left(self):
-    #     self.eye += 0.1 * self.get_right()
-    #     self.view = glm.lookAt(self.eye, self.center, self.up)
+    def get_view_matrix(self):
+        return glm.lookAt(self.get_eye() + self.pan, self.center + self.pan, self.up)
     
-    def set_eye(self):
-        # self.eye = glm.vec3(0.1*np.sin(self.angle),self.height,0.1*np.cos(self.angle))
-        self.eye = glm.vec3(self.radius*np.sin(self.azimuth)*np.sin(self.elevation),self.radius*np.cos(self.elevation),self.radius*np.cos(self.azimuth)*np.sin(self.elevation))
+    def get_projection_matrix(self): 
+        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -self.distance * 2, self.distance * 2)
+
+    def toggle_projection(self):
+        self.is_projection = not self.is_projection
     
     def add_azi(self, angle):
         self.azimuth += angle
-        self.set_eye()
 
     def add_ele(self, angle):
         self.elevation += angle
-        self.set_eye()
 
-    def add_radius(self, r):
-        self.radius += r;
-        self.set_eye()
-    # def add_height(self, height):
-    #     self.height += height
-    #     self.set_eye()
-
+    def add_distance(self, d):
+        self.distance += d;
 
 global_cam = Camera(0.0, 45.0, 0.1)
 
-
 class Drag:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y 
+    def __init__(self):
+        self.x = 0.
+        self.y = 0.
     def set_position(self, x, y):
         self.x = x
         self.y = y
     def get_position(self):
         return self.x, self.y
 
-drag = Drag(0.0, 0.0)
+drag = Drag()

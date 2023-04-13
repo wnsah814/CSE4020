@@ -76,37 +76,31 @@ def main():
     vao_grid = prepare_vao_grid()
     vao_frame = prepare_vao_frame()
     vao_triangle = prepare_vao_triangle()
-    vao_cube = prepare_vao_cube()
     # loop until the user closes the window
     while not glfwWindowShouldClose(window):
         # render
-
         # enable depth test (we'll see details later)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
         glUseProgram(shader_program)
 
-        # projection matrix
-        # use orthogonal projection (we'll see details later)
-        # P = glm.ortho(-global_cam.distance,global_cam.distance,-global_cam.distance,global_cam.distance,-global_cam.distance,global_cam.distance)
-        P = global_cam.projection
+        # projection matrix        
+        P = global_cam.get_projection_matrix()
         # view matrix
-        # rotate camera position with g_cam_ang / move camera up & down with g_cam_height
-        V = glm.lookAt(global_cam.eye + global_cam.pan, global_cam.center + global_cam.pan, global_cam.up) * glm.scale(glm.vec3(global_cam.scale, global_cam.scale, global_cam.scale))
-        # V = global_cam.view
-        # print(global_cam.azimuth, global_cam.elevation, global_cam.radius)
-        # current frame: P*V*I (now this is the world frame)
-        I = glm.mat4()
+        V = global_cam.get_view_matrix()
 
-        # draw current grid
+        I = glm.mat4()
+        # current frame: P*V*I (now this is the world frame)
+
+        # draw grid
         M = glm.mat4()
-        GRID_START = -10
-        GRID_END = 10
-        GRID_STEP = 0.25
+        GRID_START = -20
+        GRID_END = 20
+        GRID_STEP = 0.5
 
         glBindVertexArray(vao_grid)
-        # grid X axis
+        # X axis of grid
         for i in np.arange(GRID_START, GRID_END, GRID_STEP):
             # if i == 0: continue
             M = glm.translate(glm.vec3(0, 0, i))
@@ -114,7 +108,7 @@ def main():
             glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
             glDrawArrays(GL_LINES, 0, 2)
 
-        #grid Z axis
+        # Z axis of grid
         for i in np.arange(GRID_START, GRID_END, GRID_STEP):
             # if i == 0: continue
             M = glm.translate(glm.vec3(i, 0, 0))
@@ -122,32 +116,34 @@ def main():
             glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
             glDrawArrays(GL_LINES, 2, 2)
 
-        # world frame
-        MVP = P*V*I
-        glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
+        # # draw frame
+        # # world frame
+        # MVP = P*V*I
+        # glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
 
-        glBindVertexArray(vao_frame)
-        glDrawArrays(GL_LINES, 0, 6)
+        # glBindVertexArray(vao_frame)
+        # glDrawArrays(GL_LINES, 0, 6)
           
-        # animating
-        t = glfwGetTime()
+        # # animating
+        # t = glfwGetTime()
 
-        # rotation
-        th = np.radians(t*90)
-        R = glm.rotate(th, glm.vec3(0,0,1))
+        # # rotation
+        # th = np.radians(t*90)
+        # R = glm.rotate(th, glm.vec3(0,0,1))
 
-        # tranlation
-        # T = glm.translate(glm.vec3(offset_x, offset_y, offset_z));
+        # # tranlation
+        # # T = glm.translate(glm.vec3(offset_x, offset_y, offset_z));
 
-        # scaling
-        S = glm.scale(glm.vec3(np.sin(t), np.sin(t), np.sin(t)))
+        # # scaling
+        # S = glm.scale(glm.vec3(np.sin(t), np.sin(t), np.sin(t)))
 
         # M = R @ T
-        M = R
+        M = I
         # M = S
         # M = R @ T
         # M = T @ R
 
+        # draw triangle
         # current frame: P*V*M
         MVP = P*V*M
         glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
@@ -155,23 +151,6 @@ def main():
         # draw triangle w.r.t. the current frame
         glBindVertexArray(vao_triangle)
         glDrawArrays(GL_TRIANGLES, 0, 3)
-
-        # draw triangle w.r.t. the current frame
-        # glBindVertexArray(vao_cube)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 4, 4)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 8, 4)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 12, 4)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 16, 4)
-        # glDrawArrays(GL_TRIANGLE_STRIP, 20, 4)
-        # R = glm.rotate(np.radians(180))
-        # M = R*M
-        # MVP = P*V*M
-        # glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
-
-        # draw current frame
-        # glBindVertexArray(vao_frame)
-        # glDrawArrays(GL_LINES, 0, 6)
 
         # swap front and back buffers
         glfwSwapBuffers(window)
