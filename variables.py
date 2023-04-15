@@ -1,16 +1,15 @@
 import glm
 import numpy as np
 class Camera:
-    def __init__(self, azimuth, elevation, height):
-        self.azimuth = azimuth
-        self.elevation = elevation
-        self.height = height        
+    def __init__(self):
+        self.distance = 10.0
+        self.azimuth = glm.radians(45.)
+        self.elevation = glm.radians(45.)
 
         self.pan = glm.vec3(0.0, 0.0, 0.0)
-        self.distance = 1.0
-
         self.center = glm.vec3(0, 0, 0)
         self.up = glm.vec3(0, 1, 0)
+
         self.is_projection = True
     
     def get_eye(self):
@@ -20,7 +19,7 @@ class Camera:
         return glm.lookAt(self.get_eye() + self.pan, self.center + self.pan, self.up)
     
     def get_projection_matrix(self): 
-        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -self.distance * 3, self.distance * 3)
+        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -50, 50)
 
     def toggle_projection(self):
         self.is_projection = not self.is_projection
@@ -34,7 +33,7 @@ class Camera:
     def add_distance(self, d):
         self.distance += d;
 
-global_cam = Camera(0.0, 45.0, 0.1)
+global_cam = Camera()
 
 class Drag:
     def __init__(self):

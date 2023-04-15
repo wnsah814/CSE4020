@@ -74,8 +74,7 @@ def main():
 
     # prepare vaos
     vao_grid = prepare_vao_grid()
-    vao_frame = prepare_vao_frame()
-    vao_triangle = prepare_vao_triangle()
+    vao_cube = prepare_vao_cube()
     # loop until the user closes the window
     while not glfwWindowShouldClose(window):
         # render
@@ -85,13 +84,12 @@ def main():
 
         glUseProgram(shader_program)
 
-        # projection matrix        
+        # projection matrix
         P = global_cam.get_projection_matrix()
         # view matrix
         V = global_cam.get_view_matrix()
 
         M = glm.mat4()
-        # current frame: P*V*I (now this is the world frame)
 
         # draw grid
         GRID_START = -20
@@ -101,7 +99,6 @@ def main():
         glBindVertexArray(vao_grid)
         # X axis of grid
         for i in np.arange(GRID_START, GRID_END, GRID_STEP):
-            # if i == 0: continue
             M = glm.translate(glm.vec3(0, 0, i))
             MVP = P*V*M
             glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
@@ -109,19 +106,17 @@ def main():
 
         # Z axis of grid
         for i in np.arange(GRID_START, GRID_END, GRID_STEP):
-            # if i == 0: continue
             M = glm.translate(glm.vec3(i, 0, 0))
             MVP = P*V*M
             glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
             glDrawArrays(GL_LINES, 2, 2)
           
-
-        # draw triangle
-        # M = glm.mat4()
-        # MVP = P*V*M
-        # glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
-        # glBindVertexArray(vao_triangle)
-        # glDrawArrays(GL_TRIANGLES, 0, 3)
+        # draw cube
+        M = glm.mat4()
+        MVP = P*V*M
+        glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, glm.value_ptr(MVP))
+        glBindVertexArray(vao_cube)
+        glDrawArrays(GL_TRIANGLES, 0, 36)
 
         # swap front and back buffers
         glfwSwapBuffers(window)
