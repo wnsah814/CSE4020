@@ -1,5 +1,4 @@
 import glm
-import numpy as np
 class Camera:
     def __init__(self):
         self.distance = 10.0
@@ -13,13 +12,13 @@ class Camera:
         self.is_projection = True
     
     def get_eye(self):
-        return glm.vec3(self.distance * np.sin(self.azimuth) * np.sin(self.elevation), self.distance * np.cos(self.elevation), self.distance * np.cos(self.azimuth) * np.sin(self.elevation))
+        return glm.vec3(self.distance * glm.sin(self.azimuth) * glm.sin(self.elevation), self.distance * glm.cos(self.elevation), self.distance * glm.cos(self.azimuth) * glm.sin(self.elevation))
     
     def get_view_matrix(self):
         return glm.lookAt(self.get_eye() + self.pan, self.center + self.pan, self.up)
     
     def get_projection_matrix(self): 
-        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2, self.distance / 2, -self.distance / 2, self.distance / 2, -50, 50)
+        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2.45, self.distance / 2.45, -self.distance / 2.45, self.distance / 2.45, -50, 50)
 
     def toggle_projection(self):
         self.is_projection = not self.is_projection
@@ -31,8 +30,13 @@ class Camera:
         self.elevation += angle
 
     def add_distance(self, d):
-        self.distance += d;
-
+        tmp_dist = self.distance + d
+        if tmp_dist < 0.01: 
+            tmp_dist = 0.01
+        elif tmp_dist > 40: 
+            tmp_dist = 40
+        self.distance = tmp_dist
+        
 global_cam = Camera()
 
 class Drag:

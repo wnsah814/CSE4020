@@ -2,7 +2,6 @@ from OpenGL.GL import *
 from glfw.GLFW import *
 import glm
 import numpy as np
-
 from variables import global_cam
 from load_shaders import *
 from key_callback import *
@@ -54,7 +53,7 @@ def main():
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE) # for macOS
 
     # create a window and OpenGL context
-    window = glfwCreateWindow(800, 800, '2021092379', None, None)
+    window = glfwCreateWindow(800, 800, '2021092379_project1', None, None)
     if not window:
         glfwTerminate()
         return

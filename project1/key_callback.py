@@ -1,6 +1,5 @@
 from OpenGL.GL import *
 from glfw.GLFW import *
-import numpy as np
 
 from variables import global_cam
 
