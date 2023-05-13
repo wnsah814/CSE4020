@@ -141,6 +141,29 @@ void main()
 }
 '''
 
+def draw_grid(vao, VP, unif_locs_color):
+    M = glm.mat4()
+
+    GRID_START = -20
+    GRID_END = 21
+    GRID_STEP = 1
+
+    glBindVertexArray(vao)
+    # X axis of grid
+    for i in np.arange(GRID_START, GRID_END, GRID_STEP):
+        M = glm.translate(glm.vec3(0, 0, i))
+        MVP = VP * M
+        glUniformMatrix4fv(unif_locs_color['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+        glDrawArrays(GL_LINES, 0, 2)
+
+    # Z axis of grid
+    for i in np.arange(GRID_START, GRID_END, GRID_STEP):
+        M = glm.translate(glm.vec3(i, 0, 0))
+        MVP = VP * M
+        glUniformMatrix4fv(unif_locs_color['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+        glDrawArrays(GL_LINES, 2, 2)
+          
+
 def main():
     # initialize glfw
     if not glfwInit():
@@ -252,57 +275,37 @@ def main():
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
-        glUseProgram(shader_color)
-
         # projection matrix
         P = global_cam.get_projection_matrix()
         # view matrix
         V = global_cam.get_view_matrix()
         view_pos = global_cam.get_eye() + global_cam.pan
-        M = glm.mat4()
 
-        # draw grid
-        GRID_START = -20
-        GRID_END = 21
-        GRID_STEP = 1
+        glUseProgram(shader_color)
+        draw_grid(vao_grid, P * V, unif_locs_color)
 
-        glBindVertexArray(vao_grid)
-        # X axis of grid
-        for i in np.arange(GRID_START, GRID_END, GRID_STEP):
-            M = glm.translate(glm.vec3(0, 0, i))
-            MVP = P*V*M
-            glUniformMatrix4fv(unif_locs_color['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-            glDrawArrays(GL_LINES, 0, 2)
-
-        # Z axis of grid
-        for i in np.arange(GRID_START, GRID_END, GRID_STEP):
-            M = glm.translate(glm.vec3(i, 0, 0))
-            MVP = P*V*M
-            glUniformMatrix4fv(unif_locs_color['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-            glDrawArrays(GL_LINES, 2, 2)
-          
         t = glfw.get_time();
 
         glUseProgram(shader_normal)
         glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)
         
-        transforms = {
-            "root": glm.translate(glm.vec3(0, glm.sin(t*2)/2, 0)) * glm.rotate(glm.radians(t*10), glm.vec3(0, 1, 0)),
-            "split": glm.translate(glm.vec3(0, (glm.sin(t)-0.7) * 8 if glm.sin(t)-0.7 > 0 else 0, 0)),
-            "self_updown1" :  glm.translate(glm.vec3(0, 4 + (glm.cos(t * 5) + 1) * 0.3, 0)),
-            "self_updown2" :  glm.translate(glm.vec3(0, 4 + (glm.sin(t * 5) + 1) * 0.3, 0)),
-            "self_rotate_long1": glm.rotate(10 * (glm.cos(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
-            "self_rotate_long2": glm.rotate(10 * (glm.sin(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
-            "self_rotate_short1": glm.rotate(3 * glm.cos(t*2), glm.vec3(1, 3, 1)),
-            "self_rotate_short2": glm.rotate(3 * glm.sin(t*2), glm.vec3(0, 1, 0)),
-            "cone_rotate1" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(-1.5, 2, -1.5)) * glm.rotate(glm.radians(10), glm.vec3(0, 0, 1)) * glm.rotate((glm.sin(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
-            "cone_rotate2" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(1.5, 2, -1.5)) * glm.rotate(glm.radians(-10), glm.vec3(0, 0, 1)) * glm.rotate((glm.cos(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
-        }
-        
         if node_manager.single_mash_mode:
             if node_manager.sigle_node != None:
-                node_manager.sigle_node.draw_node(P*V, unif_locs_normal)
+                node_manager.sigle_node.draw_node(P * V, unif_locs_normal)
         else:
+            transforms = {
+                "root": glm.translate(glm.vec3(0, glm.sin(t*2)/2, 0)) * glm.rotate(glm.radians(t*10), glm.vec3(0, 1, 0)),
+                "split": glm.translate(glm.vec3(0, (glm.sin(t)-0.7) * 8 if glm.sin(t)-0.7 > 0 else 0, 0)),
+                "self_updown1" :  glm.translate(glm.vec3(0, 4 + (glm.cos(t * 5) + 1) * 0.3, 0)),
+                "self_updown2" :  glm.translate(glm.vec3(0, 4 + (glm.sin(t * 5) + 1) * 0.3, 0)),
+                "self_rotate_long1": glm.rotate(10 * (glm.cos(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
+                "self_rotate_long2": glm.rotate(10 * (glm.sin(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
+                "self_rotate_short1": glm.rotate(3 * glm.cos(t*2), glm.vec3(1, 3, 1)),
+                "self_rotate_short2": glm.rotate(3 * glm.sin(t*2), glm.vec3(0, 1, 0)),
+                "cone_rotate1" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(-1.5, 2, -1.5)) * glm.rotate(glm.radians(10), glm.vec3(0, 0, 1)) * glm.rotate((glm.sin(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
+                "cone_rotate2" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(1.5, 2, -1.5)) * glm.rotate(glm.radians(-10), glm.vec3(0, 0, 1)) * glm.rotate((glm.cos(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
+            }
+
             node_manager.hierarch_nodes["root_body"].set_transform(glm.translate(glm.vec3(0, 6, 0)) * transforms["split"] * transforms["root"])
             node_manager.hierarch_nodes["root_main_bolt"].set_transform(transforms["self_updown1"] * transforms["self_rotate_long1"])
             node_manager.hierarch_nodes["root_sub_bolt1"].set_transform(transforms["cone_rotate1"])
