@@ -67,63 +67,8 @@ void main()
 }
 '''
 
-g_fragment_shader_src_normal_x = '''
-#version 330 core
-
-#define NLIGHT 3
-
-in vec3 vout_surface_pos;
-in vec3 vout_normal;
-
-out vec4 FragColor;
-
-uniform vec3 view_pos;
-uniform vec3 material_color;
-
-void main()
-{
-    // light and material properties
-    vec3 light_pos = vec3(100, 100, -100);
-    vec3 light_color = vec3(1,1,1);
-    // vec3 material_color = vec3(156, 167, 119) * 0.004;
-    float material_shininess = 32.0;
-
-    // light components
-    vec3 light_ambient = 0.1*light_color;
-    vec3 light_diffuse = light_color;
-    vec3 light_specular = light_color;
-
-    // material components
-    vec3 material_ambient = material_color;
-    vec3 material_diffuse = material_color;
-    vec3 material_specular = light_color;  // for non-metal material
-
-    // ambient
-    vec3 ambient = light_ambient * material_ambient;
-
-    // for diffiuse and specular
-    vec3 normal = normalize(vout_normal);
-    vec3 surface_pos = vout_surface_pos;
-    vec3 light_dir = normalize(light_pos - surface_pos);
-
-    // diffuse
-    float diff = max(dot(normal, light_dir), 0);
-    vec3 diffuse = diff * light_diffuse * material_diffuse;
-
-    // specular
-    vec3 view_dir = normalize(view_pos - surface_pos);
-    vec3 reflect_dir = reflect(-light_dir, normal);
-    float spec = pow( max(dot(view_dir, reflect_dir), 0.0), material_shininess);
-    vec3 specular = spec * light_specular * material_specular;
-
-    vec3 color = ambient + diffuse + specular;
-    FragColor = vec4(color, 1.);
-}
-'''
 g_fragment_shader_src_normal = '''
 #version 330 core
-
-#define NLIGHT 3
 
 in vec3 vout_surface_pos;
 in vec3 vout_normal;
@@ -178,40 +123,19 @@ vec3 calcLight(Light light) {
 
 void main()
 {
-    //vec3 light_pos[3] = {vec3(10, 10, 10), vec3(-10, -10, -10), vec3(10, 10, -10)};
-    //vec3 light_pos[3] = vec3[3](vec3(10, 10, 10), vec3(-10, -10, -10), vec3(10, 10, -10));
-    
-    /*
-    Light lights[3] = {
-        Light(vec3(10, 10, 10), vec3(1, 0, 0)),
-        Light(vec3(10, -10, 10), vec3(0, 1, 0)),
-        Light(vec3(10, 10, 110), vec3(0, 0, 1)),
-    };
-    */
-
-    /*    
-    Light lights[3] = Light[3](
-        Light(vec3(20, 20, 20), vec3(1, 0, 0)),
-        Light(vec3(20, -20, 20), vec3(0, 1, 0)),
-        Light(vec3(20, 20, 20), vec3(0, 0, 1)),
-    );
-    */
-
-
-
-    
-    Light lights[3];
-    lights[0] = Light(vec3(120, 120, 120), vec3(1, 1, 1) * 0.7);
-    lights[1] = Light(vec3(120, -120, 120), vec3(1, 1, 1) * 0.7);
-    lights[2] = Light(vec3(-120, 120, -120), vec3(1, 1, 1) * 0.7);
+    Light lights[4];
+    float light_power = 0.6;
+    lights[0] = Light(vec3(0, 25, 0), vec3(1, 1, 1) * light_power);
+    lights[1] = Light(vec3(0, -50, 0), vec3(1, 1, 1) * light_power);
+    lights[2] = Light(vec3(-25, -25, 25), vec3(1, 1, 1) * light_power);
+    lights[3] = Light(vec3(25, 25, -25), vec3(1, 1, 1) * light_power);
     
 
     vec3 color = vec3(0, 0, 0);
-    for (int i = 0; i < NLIGHT; ++i) {
+
+    for (int i = 0; i < 4; ++i) {
         color += calcLight(lights[i]);
     }
-
-    //vec3 color = calcLight(lights[0]);
 
     FragColor = vec4(color, 1.);
 }
@@ -256,7 +180,6 @@ def main():
 
     # prepare vaos
     vao_grid = prepare_vao_grid()
-    vao_cube = prepare_vao_cube()
 
     # hierarchical
     node_manager.single_mash_mode = False
@@ -276,22 +199,17 @@ def main():
     node_manager.append_node("root_body_b", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(3,3,3)), glm.vec3(0, 0, 0), vertices, normals, indices)
     node_manager.append_node("left_body_b", node_manager.hierarch_nodes["left_body"], glm.scale(glm.vec3(3,3,3)), glm.vec3(0, 0, 0), vertices, normals, indices)
     node_manager.append_node("right_body_b", node_manager.hierarch_nodes["right_body"], glm.scale(glm.vec3(3,3,3)), glm.vec3(0, 0, 0), vertices, normals, indices)
-    
-    # vertices, normals, indices = load_obj(os.path.join(obj_dir, "body.obj"))
-    # node_manager.append_node("root_body", None, glm.scale(glm.vec3(3,3,3)), glm.vec3(161,194,207) * 0.004, vertices, normals, indices)
-    # node_manager.append_node("left_body", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(3,3,3)), glm.vec3(161,194,207) * 0.004, vertices, normals, indices)
-    # node_manager.append_node("right_body", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(3,3,3)), glm.vec3(161,194,207) * 0.004, vertices, normals, indices)
 
     vertices, normals, indices = load_obj(os.path.join(obj_dir, "bolt.obj"))
     node_manager.append_node("root_main_bolt", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.3,0.3,0.3)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-    node_manager.append_node("root_sub_bolt1", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.15,0.15,0.15)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-    node_manager.append_node("root_sub_bolt2", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.15,0.15,0.15)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-    
     node_manager.append_node("left_main_bolt", node_manager.hierarch_nodes["left_body"], glm.scale(glm.vec3(0.3,0.3,0.3)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-    node_manager.append_node("left_sub_bolt", node_manager.hierarch_nodes["left_body"], glm.scale(glm.vec3(0.15,0.15,0.15)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-
     node_manager.append_node("right_main_bolt", node_manager.hierarch_nodes["right_body"], glm.scale(glm.vec3(0.3,0.3,0.3)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
-    node_manager.append_node("right_sub_bolt", node_manager.hierarch_nodes["right_body"], glm.scale(glm.vec3(0.15,0.15,0.15)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
+
+    vertices, normals, indices = load_obj(os.path.join(obj_dir, "small_bolt.obj"))
+    node_manager.append_node("root_sub_bolt1", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.18, 0.18, 0.18)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
+    node_manager.append_node("root_sub_bolt2", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.18, 0.18, 0.18)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
+    node_manager.append_node("left_sub_bolt", node_manager.hierarch_nodes["left_body"], glm.scale(glm.vec3(0.18, 0.18, 0.18)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
+    node_manager.append_node("right_sub_bolt", node_manager.hierarch_nodes["right_body"], glm.scale(glm.vec3(0.18, 0.18, 0.18)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
 
     vertices, normals, indices = load_obj(os.path.join(obj_dir, "magnet_body.obj"))
     node_manager.append_node("root_left_magnet", node_manager.hierarch_nodes["root_body"], glm.scale(glm.vec3(0.02, 0.02, 0.02)), glm.vec3(0.7, 0.7, 0.7), vertices, normals, indices)
@@ -324,18 +242,10 @@ def main():
     node_manager.append_node("right_right_magnet_blue", node_manager.hierarch_nodes["right_right_magnet"], glm.scale(glm.vec3(0.02,0.02,0.02)), glm.vec3(1, 0, 0), vertices, normals, indices)
     node_manager.single_mash_mode = True
     
-    # debugging frame
-    # vertices, normals, indices = load_obj(os.path.join(obj_dir, "bolt.obj"))
-    # node_manager.append_node("x", node_manager.hierarch_nodes["root_sub_bolt1"], glm.translate(glm.vec3(5, 0, 0)) * glm.scale(glm.vec3(0.25,0.25,0.25)), glm.vec3(1, 0, 0), vertices, normals, indices)
-    # node_manager.append_node("y", node_manager.hierarch_nodes["root_sub_bolt1"], glm.translate(glm.vec3(0, 5 ,0)) * glm.scale(glm.vec3(0.25,0.25,0.25)), glm.vec3(0, 1, 0), vertices, normals, indices)
-    # node_manager.append_node("z", node_manager.hierarch_nodes["root_sub_bolt1"], glm.translate(glm.vec3(0, 0, 5)) * glm.scale(glm.vec3(0.25,0.25,0.25)), glm.vec3(0, 0, 1), vertices, normals, indices)
-
     # loop until the user closes the window
     while not glfwWindowShouldClose(window):
         # render
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        # glClearColor(.5,.5,.5,1)
-        # glClearColor(0,0,0,1)
         glEnable(GL_DEPTH_TEST)
         if node_manager.wire_frame_mode:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
@@ -377,43 +287,38 @@ def main():
         glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)
         
         transforms = {
-            # "root": glm.rotate(glm.radians(30 * t), glm.vec3(0, 1, 0)),
-            # "root": glm.rotate(0, glm.vec3(0, 1, 0)),
             "root": glm.translate(glm.vec3(0, glm.sin(t*2)/2, 0)) * glm.rotate(glm.radians(t*10), glm.vec3(0, 1, 0)),
             "split": glm.translate(glm.vec3(0, (glm.sin(t)-0.7) * 8 if glm.sin(t)-0.7 > 0 else 0, 0)),
             "self_updown1" :  glm.translate(glm.vec3(0, 4 + (glm.cos(t * 5) + 1) * 0.3, 0)),
             "self_updown2" :  glm.translate(glm.vec3(0, 4 + (glm.sin(t * 5) + 1) * 0.3, 0)),
             "self_rotate_long1": glm.rotate(10 * (glm.cos(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
             "self_rotate_long2": glm.rotate(10 * (glm.sin(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
-            "self_rotate_short1": glm.rotate(3 * glm.cos(t*2), glm.vec3(0, 1, 0)),
+            "self_rotate_short1": glm.rotate(3 * glm.cos(t*2), glm.vec3(1, 3, 1)),
             "self_rotate_short2": glm.rotate(3 * glm.sin(t*2), glm.vec3(0, 1, 0)),
+            "cone_rotate1" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(-1.5, 2, -1.5)) * glm.rotate(glm.radians(10), glm.vec3(0, 0, 1)) * glm.rotate((glm.sin(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
+            "cone_rotate2" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(1.5, 2, -1.5)) * glm.rotate(glm.radians(-10), glm.vec3(0, 0, 1)) * glm.rotate((glm.cos(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
         }
         
         if node_manager.single_mash_mode:
             if node_manager.sigle_node != None:
                 node_manager.sigle_node.draw_node(P*V, unif_locs_normal)
         else:
-                        
-            # node_manager.hierarch_nodes["root_body"].set_transform(glm.translate(glm.vec3(0, 6, 0)) * glm.rotate(glm.radians(30 * t), glm.vec3(0, 1, 0)))
             node_manager.hierarch_nodes["root_body"].set_transform(glm.translate(glm.vec3(0, 6, 0)) * transforms["split"] * transforms["root"])
-
             node_manager.hierarch_nodes["root_main_bolt"].set_transform(transforms["self_updown1"] * transforms["self_rotate_long1"])
-            node_manager.hierarch_nodes["root_sub_bolt1"].set_transform(glm.translate(glm.vec3(-2,-2,-2)) * glm.rotate(glm.radians(-120), glm.vec3(1, 0, -1)) * transforms["self_rotate_short1"])
-            node_manager.hierarch_nodes["root_sub_bolt2"].set_transform(glm.translate(glm.vec3(2,-2,-2)) * glm.rotate(glm.radians(-120), glm.vec3(1, 0, 1)) * transforms["self_rotate_short2"])
+            node_manager.hierarch_nodes["root_sub_bolt1"].set_transform(transforms["cone_rotate1"])
+            node_manager.hierarch_nodes["root_sub_bolt2"].set_transform(transforms["cone_rotate2"])
             node_manager.hierarch_nodes["root_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
             node_manager.hierarch_nodes["root_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
 
-            # node_manager.hierarch_nodes["left_body"].set_transform(glm.translate(glm.vec3(4, -4, 0)) * glm.rotate(glm.radians(-120), glm.vec3(0, 0, 1)) * glm.translate(glm.vec3(0, (glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, 0)))
             node_manager.hierarch_nodes["left_body"].set_transform(glm.translate(glm.vec3(4, -4, 0)) * glm.rotate(glm.radians(-120), glm.vec3(0, 0, 1)) * glm.translate(glm.vec3((glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, (glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, 0)))
             node_manager.hierarch_nodes["left_main_bolt"].set_transform(transforms["self_updown2"] * transforms["self_rotate_long2"])
-            node_manager.hierarch_nodes["left_sub_bolt"].set_transform(glm.translate(glm.vec3(2,-2,-2)) * glm.rotate(glm.radians(-120), glm.vec3(1, 0, 1)) * transforms["self_rotate_short1"])
+            node_manager.hierarch_nodes["left_sub_bolt"].set_transform(transforms["cone_rotate2"])
             node_manager.hierarch_nodes["left_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
             node_manager.hierarch_nodes["left_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
 
-
             node_manager.hierarch_nodes["right_body"].set_transform(glm.translate(glm.vec3(-4, -4, 0)) * glm.rotate(glm.radians(120), glm.vec3(0, 0, 1)) * glm.translate(glm.vec3((glm.sin(t)-0.7) * -10 if glm.sin(t)-0.7 > 0 else 0, (glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, 0)))
             node_manager.hierarch_nodes["right_main_bolt"].set_transform(transforms["self_updown2"] * transforms["self_rotate_long2"])            
-            node_manager.hierarch_nodes["right_sub_bolt"].set_transform(glm.translate(glm.vec3(-2,-2,-2)) * glm.rotate(glm.radians(-120), glm.vec3(1, 0, -1)) * transforms["self_rotate_short2"])
+            node_manager.hierarch_nodes["right_sub_bolt"].set_transform(transforms["cone_rotate1"])
             node_manager.hierarch_nodes["right_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
             node_manager.hierarch_nodes["right_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
 
