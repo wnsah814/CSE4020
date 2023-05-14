@@ -6,8 +6,8 @@ import os
 
 class Camera:
     def __init__(self):
-        self.distance = 20.0
-        self.azimuth = glm.radians(45.)
+        self.distance = 15.0
+        self.azimuth = glm.radians(135.)
         self.elevation = glm.radians(45.)
 
         self.pan = glm.vec3(0.0, 0.0, 0.0)
@@ -133,7 +133,7 @@ class NodeManager:
         self.hierarch_nodes[name] = Node(parent, shape, color, vertices, normals, indices)
 
     def set_single_node(self, parent, vertices, normals, indices):
-        self.sigle_node = Node(parent, glm.scale(glm.vec3(0.2, .2, .2)), glm.vec3(1,1,1), vertices, normals, indices)
+        self.sigle_node = Node(parent, glm.mat4(), glm.vec3(1,1,1), vertices, normals, indices)
 
     def toggle_render_mode(self):
         self.single_mash_mode = not self.single_mash_mode
