@@ -7,7 +7,8 @@ def cursor_position_callback(window, xpos, ypos):
     # orbit
     if glfw.get_mouse_button(window, glfw.MOUSE_BUTTON_LEFT) == glfw.PRESS:
         drag_start_x, drag_start_y = drag.get_position()
-        dx, dy = xpos - drag_start_x, drag_start_y - ypos 
+        dx, dy = drag_start_x - xpos , drag_start_y - ypos
+        # dx, dy = xpos - drag_start_x, drag_start_y - ypos 
         drag.set_position(xpos, ypos)
 
         SCALER = 0.1
@@ -22,7 +23,8 @@ def cursor_position_callback(window, xpos, ypos):
     # pan
     elif glfw.get_mouse_button(window, glfw.MOUSE_BUTTON_RIGHT) == glfw.PRESS:
         drag_start_x, drag_start_y = drag.get_position()
-        dx, dy = xpos - drag_start_x, drag_start_y - ypos
+        dx, dy = drag_start_x - xpos , drag_start_y - ypos
+        # dx, dy = xpos - drag_start_x, drag_start_y - ypos
         drag.set_position(xpos, ypos)
         V = global_cam.get_view_matrix()
         V = glm.inverse(V)

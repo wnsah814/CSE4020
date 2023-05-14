@@ -36,8 +36,8 @@ class Camera:
 
     def add_distance(self, d):
         tmp_dist = self.distance + d
-        if tmp_dist < 0.01: 
-            tmp_dist = 0.01
+        if tmp_dist < 0.2: 
+            tmp_dist = 0.2
         elif tmp_dist > 40: 
             tmp_dist = 40
         self.distance = tmp_dist
