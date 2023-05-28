@@ -58,6 +58,19 @@ drag = Drag()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class JointManager:
     def __init__(self):
         self.root_joint = None
@@ -68,6 +81,8 @@ class JointManager:
         self.count = 0
         self.animate = False
         self.oldtime = 0
+        self.frow = 0
+        self.fcol = 0
 
     def set_root(self, root_joint, frames):
         self.root_joint = root_joint
@@ -75,6 +90,39 @@ class JointManager:
 
         self.vao, self.count = create_vao(root_joint, frames)
         
+    def update_joint_transform(self, joint):
+        joint_transform = joint.joint_transform
+        joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], glm.mat4())
+        # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
+        joint_manager.fcol += len(joint.channels)
+        joint.set_joint_transform(joint_transform)
+
+        # MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
+        # glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+
+        # glDrawArrays(GL_LINES, joint.index, 2)
+
+        for child in joint.children:
+            self.update_joint_transform(child)
+
+    def draw(self, joint, VP, unif_locs):
+        # joint_transform = joint.joint_transform
+        # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
+        # joint_manager.fcol += len(joint.channels)
+        # joint.set_joint_transform(joint_transform)
+
+        MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
+        glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+
+        glDrawArrays(GL_LINES, joint.index, 2)
+
+        for child in joint.children:
+            self.draw(child, VP, unif_locs)
+    
+    def reset_joint_transform(self, joint):
+        joint.set_joint_transform(glm.mat4())
+        for child in joint.children:
+            self.reset_joint_transform(child)
 
 joint_manager = JointManager()
 
@@ -98,13 +146,14 @@ class Joint:
 
         self.channels = []
 
+        self.index = 0
 
     
     def printall(self):
-        print("name", self.name, "parent", self.parent, "offset", self.offset, "link", self.link_transform_from_parent, "joint", self.joint_transform, "global", self.global_transform, "shape", self.shape_transform, "channels", self.channels, sep="\n")
-        print('childrens', self.children)
+        print("name", self.name, "index", self.index, "parent", self.parent, "offset", self.offset, "link", self.link_transform_from_parent, "joint", self.joint_transform, "global", self.global_transform, "shape", self.shape_transform, "channels", self.channels, sep="\n")
+        # print('childrens', self.children)
         for child in self.children:
-            print(child.name)
+            print(child.index)
 
     def set_joint_transform(self, joint_transform):
         self.joint_transform = joint_transform
@@ -173,8 +222,8 @@ def load_bvh(filename):
     print("parsed hierarchy")
 
     # Motion 정보 파싱
-    joint_manager.frame_number = lines[motion_index + 1].split(' ')[-1]
-    joint_manager.frame_time = lines[motion_index + 2].split(' ')[-1]
+    joint_manager.frame_number = int(lines[motion_index + 1].split()[-1])
+    joint_manager.frame_time = float(lines[motion_index + 2].split()[-1])
 
     motion_lines = lines[motion_index + 3:]
     # print(frame_number, frame_time, "motion lines")
@@ -189,12 +238,16 @@ def load_bvh(filename):
 
     return root_joint, frames
 
+vao_start_index = 0
 def create_vao(root_joint, frames):
+    global vao_start_index
     vao = glGenVertexArrays(1)
     glBindVertexArray(vao)
 
     vertices = []
     # process_joint(root_joint, frames, vertices)
+
+    vao_start_index = 0
     process_joint(root_joint, vertices)
 
     print("vertices", vertices, sep="\n")
@@ -215,18 +268,26 @@ def create_vao(root_joint, frames):
     return vao, len(vertices)
 
 def process_joint(joint, vertices, parent_transform = glm.mat4()):
+    global vao_start_index
+
     joint_transform = glm.mat4(parent_transform) * glm.translate(joint.offset)
-    vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+    joint.index = vao_start_index
+    vao_start_index += 2
+    if joint != joint_manager.root_joint:
+        vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+    
     for child in joint.children:
         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
         process_joint(child, vertices, joint_transform)
 
 def parse_joint_transform(joint, frame, joint_transform):
     for channel, value in zip(joint.channels, frame):
-        print("c", channel, "v", value);
+        # print("c", channel, "v", value);
         channel = channel.upper()
+        value = float(value)
         if channel == 'XPOSITION':
-            print("xxxx")
+            # print("xxxx")
+            print("value", value)
             joint_transform = joint_transform * glm.translate((value, 0, 0))
             # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
         elif channel == 'YPOSITION':

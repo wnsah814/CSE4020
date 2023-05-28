@@ -246,74 +246,48 @@ def main():
         if joint_manager.vao is not None:
             glUseProgram(shader_pos)
             glBindVertexArray(joint_manager.vao)
-            M = glm.mat4()
+
+            if joint_manager.animate:
+                newtime = glfwGetTime()
+                if newtime - joint_manager.oldtime >= joint_manager.frame_time:
+                    joint_manager.oldtime = newtime
+                    joint_manager.frow += 1
+                    print(joint_manager.frow)
+                    if (joint_manager.frow >= joint_manager.frame_number):
+                        joint_manager.frow = 0
+                        joint_manager.reset_joint_transform(joint_manager.root_joint)
+                        joint_manager.root_joint.update_tree_global_transform()
+                    joint_manager.fcol = 0
+                    print(joint_manager.oldtime)
+                
+                # for child in joint_manager.children:
+                joint_manager.update_joint_transform(joint_manager.root_joint)
+                # MVP = P * V * node.get_global_transform() * node.get_shape_transform()
+                # for frame in joint_manager.frames:
+                # joint_transform = joint_manager.root_joint.joint_transform
+                # # print("before", joint_transform)
+                # joint_transform = parse_joint_transform(joint_manager.root_joint, joint_manager.frames[0][0:6], joint_transform)
+                # # print("after", joint_transform)
+                # joint_manager.root_joint.set_joint_transform(joint_transform)
+                # for child in joint_manager.root_joint:
+                
+                joint_manager.root_joint.update_tree_global_transform()
+                
+                joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
+                
+                # MVP = P * V * joint.get_global_transform() * joint.get_shape_transform()
+                # glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+                
+                # glDrawArrays(GL_LINES, joint.index, 2)
+                # for idx in range(0, joint_manager.count, 2):
+                #     glDrawArrays(GL_LINES, idx, 2)
+            else:
+                M = glm.mat4()
+
+                MVP = P * V * M
+                glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+                glDrawArrays(GL_LINES, 0, joint_manager.count)
             
-            # MVP = P * V * node.get_global_transform() * node.get_shape_transform()
-            MVP = P * V * M
-            glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-            # glDrawArrays(GL_LINES, 1, joint_manager.count)
-            
-            # for frame in joint_manager.frames:
-            joint_transform = joint_manager.root_joint.joint_transform
-            print("before", joint_transform)
-            joint_transform = parse_joint_transform(joint_manager.root_joint, joint_manager.frames[0][0:6], joint_transform)
-            print("after", joint_transform)
-            joint_manager.root_joint.set_joint_transform(joint_transform)
-            # for child in joint_manager.root_joint:
-
-
-            for idx in range(1, joint_manager.count, 2):
-                glDrawArrays(GL_LINES, idx, 2)
-
-
-
-
-        # glUseProgram(shader_normal)
-        # glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)
-
-
-
-        # if node_manager.single_mash_mode:
-        #     if node_manager.sigle_node != None:
-        #         node_manager.sigle_node.draw_node(P * V, unif_locs_normal)
-        # else:
-        #     transforms = {
-        #         "root": glm.translate(glm.vec3(0, glm.sin(t*2)/2, 0)) * glm.rotate(glm.radians(t*10), glm.vec3(0, 1, 0)),
-        #         "split": glm.translate(glm.vec3(0, (glm.sin(t)-0.7) * 8 if glm.sin(t)-0.7 > 0 else 0, 0)),
-        #         "self_updown1" :  glm.translate(glm.vec3(0, 4 + (glm.cos(t * 5) + 1) * 0.3, 0)),
-        #         "self_updown2" :  glm.translate(glm.vec3(0, 4 + (glm.sin(t * 5) + 1) * 0.3, 0)),
-        #         "self_rotate_long1": glm.rotate(10 * (glm.cos(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
-        #         "self_rotate_long2": glm.rotate(10 * (glm.sin(t * 5) + 1) * 0.3, glm.vec3(0,1,0)),
-        #         "self_rotate_short1": glm.rotate(3 * glm.cos(t*2), glm.vec3(1, 3, 1)),
-        #         "self_rotate_short2": glm.rotate(3 * glm.sin(t*2), glm.vec3(0, 1, 0)),
-        #         "cone_rotate1" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(-1.5, 2, -1.5)) * glm.rotate(glm.radians(10), glm.vec3(0, 0, 1)) * glm.rotate((glm.sin(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
-        #         "cone_rotate2" : glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * glm.translate(glm.vec3(1.5, 2, -1.5)) * glm.rotate(glm.radians(-10), glm.vec3(0, 0, 1)) * glm.rotate((glm.cos(t*2)+1) * glm.radians(180), glm.vec3(-1, 4, 0)),
-        #     }
-
-        #     node_manager.hierarch_nodes["root_body"].set_transform(glm.translate(glm.vec3(0, 6, 0)) * transforms["split"] * transforms["root"])
-        #     node_manager.hierarch_nodes["root_main_bolt"].set_transform(transforms["self_updown1"] * transforms["self_rotate_long1"])
-        #     node_manager.hierarch_nodes["root_sub_bolt1"].set_transform(transforms["cone_rotate1"])
-        #     node_manager.hierarch_nodes["root_sub_bolt2"].set_transform(transforms["cone_rotate2"])
-        #     node_manager.hierarch_nodes["root_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-        #     node_manager.hierarch_nodes["root_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-
-        #     node_manager.hierarch_nodes["left_body"].set_transform(glm.translate(glm.vec3(4, -4, 0)) * glm.rotate(glm.radians(-120), glm.vec3(0, 0, 1)) * glm.translate(glm.vec3((glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, (glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, 0)))
-        #     node_manager.hierarch_nodes["left_main_bolt"].set_transform(transforms["self_updown2"] * transforms["self_rotate_long2"])
-        #     node_manager.hierarch_nodes["left_sub_bolt"].set_transform(transforms["cone_rotate2"])
-        #     node_manager.hierarch_nodes["left_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-        #     node_manager.hierarch_nodes["left_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-
-        #     node_manager.hierarch_nodes["right_body"].set_transform(glm.translate(glm.vec3(-4, -4, 0)) * glm.rotate(glm.radians(120), glm.vec3(0, 0, 1)) * glm.translate(glm.vec3((glm.sin(t)-0.7) * -10 if glm.sin(t)-0.7 > 0 else 0, (glm.sin(t)-0.7) * 10 if glm.sin(t)-0.7 > 0 else 0, 0)))
-        #     node_manager.hierarch_nodes["right_main_bolt"].set_transform(transforms["self_updown2"] * transforms["self_rotate_long2"])            
-        #     node_manager.hierarch_nodes["right_sub_bolt"].set_transform(transforms["cone_rotate1"])
-        #     node_manager.hierarch_nodes["right_left_magnet"].set_transform(glm.translate(glm.vec3(2.4, 2.4 ,0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-        #     node_manager.hierarch_nodes["right_right_magnet"].set_transform(glm.translate(glm.vec3(-2.4, 2.4 ,0)) * glm.rotate(glm.radians(180), glm.vec3(0, 1, 0)) * glm.rotate(-glm.radians(45 + glm.sin(t * 4) * 10), glm.vec3(0, 0, 1)) * (glm.rotate(8 * t, glm.vec3(0,1,0)) if glm.sin(t)-0.7 > 0 else glm.mat4()))
-
-        #     # update
-        #     node_manager.hierarch_nodes["root_body"].update_tree_global_transform()
-        #     for node in node_manager.hierarch_nodes.values():
-        #         node.draw_node(P*V, unif_locs_normal)
-
         # swap front and back buffers
         glfwSwapBuffers(window)
 

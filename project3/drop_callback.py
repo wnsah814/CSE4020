@@ -6,4 +6,4 @@ def drop_callback(window, paths):
     joints, frames = load_bvh(path)
     joint_manager.set_root(joints, frames)
     # print("joints", joints, "frames", frames, sep="\n")
-    # joints.printall()
+    joints.printall()
