@@ -3,7 +3,7 @@ from glfw.GLFW import *
 import glm
 import numpy as np
 import os
-from variables import global_cam, joint_manager
+from variables import global_cam, joint_manager, parse_joint_transform
 from load_shaders import *
 from key_callback import *
 from mouse_button_callback import *
@@ -243,17 +243,30 @@ def main():
         glUseProgram(shader_color)
         draw_grid(vao_grid, P * V, unif_locs_color)
 
-        if (joint_manager.vao is not None):
+        if joint_manager.vao is not None:
             glUseProgram(shader_pos)
             glBindVertexArray(joint_manager.vao)
             M = glm.mat4()
+            
+            # MVP = P * V * node.get_global_transform() * node.get_shape_transform()
             MVP = P * V * M
             glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-            glDrawArrays(GL_LINES, 1, joint_manager.count)
+            # glDrawArrays(GL_LINES, 1, joint_manager.count)
+            
+            # for frame in joint_manager.frames:
+            joint_transform = joint_manager.root_joint.joint_transform
+            print("before", joint_transform)
+            joint_transform = parse_joint_transform(joint_manager.root_joint, joint_manager.frames[0][0:6], joint_transform)
+            print("after", joint_transform)
+            joint_manager.root_joint.set_joint_transform(joint_transform)
+            # for child in joint_manager.root_joint:
+
+
+            for idx in range(1, joint_manager.count, 2):
+                glDrawArrays(GL_LINES, idx, 2)
 
 
 
-        # t = glfw.get_time();
 
         # glUseProgram(shader_normal)
         # glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)

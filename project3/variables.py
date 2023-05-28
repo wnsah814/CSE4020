@@ -61,9 +61,13 @@ drag = Drag()
 class JointManager:
     def __init__(self):
         self.root_joint = None
-        self.frame = None
-
+        self.frames = None
+        self.frame_number = 0
+        self.frame_time = 0
         self.vao = None
+        self.count = 0
+        self.animate = False
+        self.oldtime = 0
 
     def set_root(self, root_joint, frames):
         self.root_joint = root_joint
@@ -93,6 +97,8 @@ class Joint:
         self.shape_transform = shape_transform
 
         self.channels = []
+
+
     
     def printall(self):
         print("name", self.name, "parent", self.parent, "offset", self.offset, "link", self.link_transform_from_parent, "joint", self.joint_transform, "global", self.global_transform, "shape", self.shape_transform, "channels", self.channels, sep="\n")
@@ -167,8 +173,8 @@ def load_bvh(filename):
     print("parsed hierarchy")
 
     # Motion 정보 파싱
-    frame_number = lines[motion_index + 1].split(' ')[-1]
-    frame_time = lines[motion_index + 2].split(' ')[-1]
+    joint_manager.frame_number = lines[motion_index + 1].split(' ')[-1]
+    joint_manager.frame_time = lines[motion_index + 2].split(' ')[-1]
 
     motion_lines = lines[motion_index + 3:]
     # print(frame_number, frame_time, "motion lines")
@@ -215,6 +221,30 @@ def process_joint(joint, vertices, parent_transform = glm.mat4()):
         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
         process_joint(child, vertices, joint_transform)
 
+def parse_joint_transform(joint, frame, joint_transform):
+    for channel, value in zip(joint.channels, frame):
+        print("c", channel, "v", value);
+        channel = channel.upper()
+        if channel == 'XPOSITION':
+            print("xxxx")
+            joint_transform = joint_transform * glm.translate((value, 0, 0))
+            # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
+        elif channel == 'YPOSITION':
+            joint_transform = joint_transform * glm.translate((0, value, 0))
+            # joint_transform = np.dot(joint_transform, glm.translate((0, value, 0)))
+        elif channel == 'ZPOSITION':
+            joint_transform = joint_transform * glm.translate((0, 0, value))
+            # joint_transform = np.dot(joint_transform, glm.translate((0, 0, value)))
+        elif channel == 'XROTATION':
+            joint_transform = joint_transform * glm.rotate(glm.radians(value), (1, 0, 0))
+            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (1, 0, 0)))
+        elif channel == 'YROTATION':
+            joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 1, 0))
+            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 1, 0)))
+        elif channel == 'ZROTATION':
+            joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 0, 1))
+            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
+    return joint_transform
 # def process_joint(joint, frames, vertices, parent_transform=glm.mat4()):
 #     # 조인트의 변환 계산
 #     # joint_transform = parent_transform.copy()
