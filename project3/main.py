@@ -26,12 +26,10 @@ void main()
     // 3D points in homogeneous coordinates
     vec4 p3D_in_hcoord = vec4(vin_pos.xyz, 1.0);
     gl_Position = MVP * p3D_in_hcoord;
-
-    vout_color = vec4(1, 1, 1, 1);
+    vout_color = vec4(0.3, 1, 0.2, 1);
 }
 
 '''
-
 g_vertex_shader_src_color = '''
 #version 330 core
 
@@ -251,7 +249,7 @@ def main():
             M = glm.mat4()
             MVP = P * V * M
             glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-            glDrawArrays(GL_LINES, 0, 30)
+            glDrawArrays(GL_LINES, 1, joint_manager.count)
 
 
 

@@ -69,8 +69,8 @@ class JointManager:
         self.root_joint = root_joint
         self.frames = frames
 
-        self.vao = create_vao(root_joint, frames)
-
+        self.vao, self.count = create_vao(root_joint, frames)
+        
 
 joint_manager = JointManager()
 
@@ -116,7 +116,6 @@ class Joint:
         return self.global_transform
     def get_shape_transform(self):
         return self.shape_transform
-    
 
 def load_bvh(filename):
     with open(filename, 'r') as file:
@@ -157,7 +156,7 @@ def load_bvh(filename):
         elif line.startswith('OFFSET'):
             offset_values = line.split(' ')[1:]
             offset = [float(value) for value in offset_values]
-            current_joint.offset = offset
+            current_joint.offset = glm.vec3(offset)
         elif line.startswith('CHANNELS'):
             channel_values = line.split(' ')[2:]
             channels = [channel.upper() for channel in channel_values]
@@ -172,7 +171,7 @@ def load_bvh(filename):
     frame_time = lines[motion_index + 2].split(' ')[-1]
 
     motion_lines = lines[motion_index + 3:]
-    print(frame_number, frame_time, "motion lines")
+    # print(frame_number, frame_time, "motion lines")
     frame_index = 0
     frames = []
 
@@ -189,11 +188,12 @@ def create_vao(root_joint, frames):
     glBindVertexArray(vao)
 
     vertices = []
-    process_joint(root_joint, frames, vertices)
+    # process_joint(root_joint, frames, vertices)
+    process_joint(root_joint, vertices)
 
     print("vertices", vertices, sep="\n")
 
-    vertex_array = np.array(vertices, dtype=np.float32)
+    vertex_array = np.array(vertices, dtype=glm.float32)
 
     vbo = glGenBuffers(1)
     glBindBuffer(GL_ARRAY_BUFFER, vbo)
@@ -206,38 +206,56 @@ def create_vao(root_joint, frames):
     # VAO 해제
     glBindVertexArray(0)
 
-    return vao
+    return vao, len(vertices)
 
-def process_joint(joint, frames, vertices, parent_transform=np.identity(4)):
-    # 조인트의 변환 계산
-    joint_transform = parent_transform.copy()
-    if joint.channels:
-        for frame in frames:
-            apply_joint_transform(joint, frame, joint_transform)
-
-    # 조인트의 버텍스 생성
-    if joint.offset is not None:
-        vertex = np.dot(joint_transform, [0, 0, 0, 1])[:3]
-        vertices.append(vertex)
-
-    # 자식 조인트 처리
+def process_joint(joint, vertices, parent_transform = glm.mat4()):
+    joint_transform = glm.mat4(parent_transform) * glm.translate(joint.offset)
+    vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
     for child in joint.children:
-        process_joint(child, frames, vertices, joint_transform)
+        vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+        process_joint(child, vertices, joint_transform)
 
-def apply_joint_transform(joint, frame, joint_transform):
-    for channel, value in zip(joint.channels, frame):
-        if channel == 'Xposition':
-            joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
-        elif channel == 'Yposition':
-            joint_transform = np.dot(joint_transform, glm.translate((0, value, 0)))
-        elif channel == 'Zposition':
-            joint_transform = np.dot(joint_transform, glm.translate((0, 0, value)))
-        elif channel == 'Xrotation':
-            joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (1, 0, 0)))
-        elif channel == 'Yrotation':
-            joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 1, 0)))
-        elif channel == 'Zrotation':
-            joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
+# def process_joint(joint, frames, vertices, parent_transform=glm.mat4()):
+#     # 조인트의 변환 계산
+#     # joint_transform = parent_transform.copy()
+#     joint_transform = glm.mat4(parent_transform)
+#     if joint.channels:
+#         for frame in frames:
+#             apply_joint_transform(joint, frame, joint_transform)
+
+#     print(f"{joint.name}'s vertex... \n{joint_transform}")
+#     # 조인트의 버텍스 생성
+#     if joint.offset is not None:
+#         vertex = np.dot(joint_transform, [0, 0, 0, 1])[:3]
+#         vertices.append(vertex)
+
+#     # 자식 조인트 처리
+#     for child in joint.children:
+#         process_joint(child, frames, vertices, joint_transform)
+
+# def apply_joint_transform(joint, frame, joint_transform):
+#     for channel, value in zip(joint.channels, frame):
+#         print("c", channel, "v", value);
+#         if channel == 'Xposition':
+#             joint_transform = joint_transform * glm.translate((value, 0, 0))
+#             # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
+#         elif channel == 'Yposition':
+#             joint_transform = joint_transform * glm.translate((0, value, 0))
+#             # joint_transform = np.dot(joint_transform, glm.translate((0, value, 0)))
+#         elif channel == 'Zposition':
+#             joint_transform = joint_transform * glm.translate((0, 0, value))
+#             # joint_transform = np.dot(joint_transform, glm.translate((0, 0, value)))
+#         elif channel == 'Xrotation':
+#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (1, 0, 0))
+#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (1, 0, 0)))
+#         elif channel == 'Yrotation':
+#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 1, 0))
+#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 1, 0)))
+#         elif channel == 'Zrotation':
+#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 0, 1))
+#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
+
+
 
 
 
