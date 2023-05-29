@@ -120,14 +120,9 @@ class JointManager:
             self.update_joint_transform(child)
 
     def draw(self, joint, VP, unif_locs):
-        # joint_transform = joint.joint_transform
-        # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
-        # joint_manager.fcol += len(joint.channels)
-        # joint.set_joint_transform(joint_transform)
-        # print(f"drawing {joint.name} ({joint.parent.name if joint.parent else joint.parent})\n{joint.link_transform_from_parent}")
+
         MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
         glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-        # if not joint.name == "End Site":
         glDrawArrays(GL_LINES, self.draw_index, 2)
         self.draw_index += 2
 
@@ -157,7 +152,6 @@ class Joint:
         self.joint_transform = glm.mat4()
         self.global_transform = glm.mat4()
 
-        # shape
         self.shape_transform = shape_transform
 
         self.channels = []
@@ -229,7 +223,6 @@ def load_bvh(filename):
             current_joint = joint
         elif line.startswith('End Site'):
             joint = Joint('End Site', current_joint, glm.mat4(), glm.mat4())
-            # print(f"append {joint.name} to {current_joint.name}")
             current_joint.children.append(joint)
             current_joint = joint
         elif line.startswith('OFFSET'):
@@ -272,7 +265,6 @@ def create_vao(root_joint, frames):
 
     # vertices = []
     vertices = [glm.vec3(0,0,0), glm.vec3(0,0,0)]
-    # process_joint(root_joint, frames, vertices)
 
     # vao_start_index = 0
     process_joint(root_joint, vertices)
@@ -295,60 +287,29 @@ def create_vao(root_joint, frames):
     return vao, len(vertices)
 
 def process_joint(joint, vertices):
-    # global vao_start_index
-
-    # print(f"{joint.name}'s link transform {joint.offset}")    
-    # joint.set_link_transform(glm.translate(joint.offset))
     joint.set_link_transform(glm.translate(joint.parent.offset if joint.parent is not None else glm.vec3(0, 0, 0)))
-    # joint.index = vao_start_index
-    # vao_start_index += 2
 
     if joint != joint_manager.root_joint:
         vertices.append(joint.offset)
-        # vertices.append((glm.translate(joint.offset) * glm.vec4(0, 0, 0, 1)).xyz)
     
     for child in joint.children:
         vertices.append(glm.vec3(0, 0, 0))
         process_joint(child, vertices)
-# def process_joint(joint, vertices, parent_transform = glm.mat4()):
-#     global vao_start_index
-    
-#     joint.link_transform_from_parent = glm.translate(joint.offset)
-
-#     joint.index = vao_start_index
-#     vao_start_index += 2
-
-#     joint_transform = glm.mat4(parent_transform) * glm.translate(joint.offset)
-    
-#     if joint != joint_manager.root_joint:
-#         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
-    
-#     for child in joint.children:
-#         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
-#         process_joint(child, vertices, joint_transform)
 
 def parse_joint_transform(joint, frame, joint_transform):
     for channel, value in zip(joint.channels, frame):
-        # print("c", channel, "v", value);
         channel = channel.upper()
         value = float(value)
         if channel == 'XPOSITION':
-            # print("value", value)
             joint_transform = joint_transform * glm.translate((value, 0, 0))
-            # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
         elif channel == 'YPOSITION':
             joint_transform = joint_transform * glm.translate((0, value, 0))
-            # joint_transform = np.dot(joint_transform, glm.translate((0, value, 0)))
         elif channel == 'ZPOSITION':
             joint_transform = joint_transform * glm.translate((0, 0, value))
-            # joint_transform = np.dot(joint_transform, glm.translate((0, 0, value)))
         elif channel == 'XROTATION':
             joint_transform = joint_transform * glm.rotate(glm.radians(value), (1, 0, 0))
-            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (1, 0, 0)))
         elif channel == 'YROTATION':
             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 1, 0))
-            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 1, 0)))
         elif channel == 'ZROTATION':
             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 0, 1))
-            # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
     return joint_transform
