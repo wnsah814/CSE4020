@@ -65,6 +65,18 @@ drag = Drag()
 
 
 
+def make_triangles(vertices):
+    new_vertices = []
+    for i in range(0, len(vertices), 2):
+        p1 = vertices[i]
+        p2 = vertices[i + 1]
+        new_vertices.append(p1.x - 1, p1.y, p1.z + 1)
+        new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
+        new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
+
+        new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
+        new_vertices.append(p1.x + 1, p1.y, p1.z + 1)
+        new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
 
 
 
@@ -94,9 +106,10 @@ class JointManager:
     def update_joint_transform(self, joint):
         joint_transform = joint.joint_transform
         joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], glm.mat4())
-        # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
-        joint_manager.fcol += len(joint.channels)
         joint.set_joint_transform(joint_transform)
+        # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
+        
+        joint_manager.fcol += len(joint.channels)
 
         # MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
         # glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
@@ -111,7 +124,7 @@ class JointManager:
         # joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], joint_transform)
         # joint_manager.fcol += len(joint.channels)
         # joint.set_joint_transform(joint_transform)
-
+        # print(f"drawing {joint.name} ({joint.parent.name if joint.parent else joint.parent})\n{joint.link_transform_from_parent}")
         MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
         glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
         # if not joint.name == "End Site":
@@ -171,9 +184,9 @@ class Joint:
 
     def update_tree_global_transform(self):
         if self.parent is not None:
-            self.global_transform = self.parent.get_global_transform() * self.link_transform_from_parent * self.joint_transform
+            self.global_transform = self.parent.get_global_transform() * self.link_transform_from_parent * self.parent.joint_transform
         else:
-            self.global_transform = self.link_transform_from_parent * self.joint_transform
+            self.global_transform = self.link_transform_from_parent 
 
         for child in self.children:
             child.update_tree_global_transform()
@@ -203,12 +216,12 @@ def load_bvh(filename):
 
     for line in hierarchy_lines:
         if line.startswith('ROOT'):
-            joint_name = line.split(' ')[1]
+            joint_name = line.split()[1]
             current_joint = Joint(joint_name, None, glm.mat4(), glm.mat4())
             root_joint = current_joint
             joints[joint_name] = current_joint
         elif line.startswith('JOINT'):
-            joint_name = line.split(' ')[1]
+            joint_name = line.split()[1]
             joint = Joint(joint_name, current_joint, glm.mat4(), glm.mat4())
             # print(f"append {joint.name} to {current_joint.name}")
             current_joint.children.append(joint)
@@ -220,12 +233,12 @@ def load_bvh(filename):
             current_joint.children.append(joint)
             current_joint = joint
         elif line.startswith('OFFSET'):
-            offset_values = line.split(' ')[1:]
+            offset_values = line.split()[1:]
             offset = [float(value) for value in offset_values]
             current_joint.offset = glm.vec3(offset)
             current_joint.link_transform_from_parent = glm.vec3(offset)
         elif line.startswith('CHANNELS'):
-            channel_values = line.split(' ')[2:]
+            channel_values = line.split()[2:]
             channels = [channel.upper() for channel in channel_values]
             current_joint.channels = channels
         elif line.startswith('}'):
@@ -243,7 +256,7 @@ def load_bvh(filename):
     frames = []
 
     while frame_index < len(motion_lines):
-        frame_values = motion_lines[frame_index].split(' ')
+        frame_values = motion_lines[frame_index].split()
         frame_values = [float(value) for value in frame_values]
         frames.append(frame_values)
         frame_index += 1
@@ -257,8 +270,8 @@ def create_vao(root_joint, frames):
     vao = glGenVertexArrays(1)
     glBindVertexArray(vao)
 
-    vertices = []
-    # vertices = [glm.vec3(0,0,0), glm.vec3(0,0,0)]
+    # vertices = []
+    vertices = [glm.vec3(0,0,0), glm.vec3(0,0,0)]
     # process_joint(root_joint, frames, vertices)
 
     # vao_start_index = 0
@@ -284,14 +297,15 @@ def create_vao(root_joint, frames):
 def process_joint(joint, vertices):
     # global vao_start_index
 
-    print(f"{joint.name}'s link transform {joint.offset}")    
-    joint.set_link_transform(glm.translate(joint.offset))
-
+    # print(f"{joint.name}'s link transform {joint.offset}")    
+    # joint.set_link_transform(glm.translate(joint.offset))
+    joint.set_link_transform(glm.translate(joint.parent.offset if joint.parent is not None else glm.vec3(0, 0, 0)))
     # joint.index = vao_start_index
     # vao_start_index += 2
 
     if joint != joint_manager.root_joint:
-        vertices.append((glm.translate(joint.offset) * glm.vec4(0, 0, 0, 1)).xyz)
+        vertices.append(joint.offset)
+        # vertices.append((glm.translate(joint.offset) * glm.vec4(0, 0, 0, 1)).xyz)
     
     for child in joint.children:
         vertices.append(glm.vec3(0, 0, 0))

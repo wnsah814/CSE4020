@@ -5,7 +5,9 @@ def drop_callback(window, paths):
     path = paths[0]
     joints, frames = load_bvh(path)
     joint_manager.set_root(joints, frames)
+    joint_manager.frow = 0
+    joint_manager.fcol = 0
+    joint_manager.root_joint.print_hierarchy()
 
-    # joint_manager.root_joint.print_hierarchy()
     # print("joints", joints, "frames", frames, sep="\n")
     # joints.printall()
