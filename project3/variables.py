@@ -78,11 +78,12 @@ class JointManager:
         self.frame_number = 0
         self.frame_time = 0
         self.vao = None
-        self.count = 0
-        self.animate = False
-        self.oldtime = 0
-        self.frow = 0
+        self.count = 0          # len(vertices)
+        self.animate = False    # is animate mode
+        self.oldtime = 0        # for clock
+        self.frow = 0           
         self.fcol = 0
+        self.draw_index = 0
 
     def set_root(self, root_joint, frames):
         self.root_joint = root_joint
@@ -113,12 +114,16 @@ class JointManager:
 
         MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
         glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-
-        glDrawArrays(GL_LINES, joint.index, 2)
+        # if not joint.name == "End Site":
+        glDrawArrays(GL_LINES, self.draw_index, 2)
+        self.draw_index += 2
 
         for child in joint.children:
             self.draw(child, VP, unif_locs)
-    
+
+        if joint == self.root_joint:
+            self.draw_index = 0
+
     def reset_joint_transform(self, joint):
         joint.set_joint_transform(glm.mat4())
         for child in joint.children:
@@ -131,8 +136,6 @@ class Joint:
         self.name = name
         self.parent = parent
         self.children = []
-        # if parent is not None:
-        #     parent.children.append(self)
 
         self.offset = None
         # 이게 아마 link transformation 일 것 같음.
@@ -146,14 +149,22 @@ class Joint:
 
         self.channels = []
 
-        self.index = 0
+        self.index = 0      # vao 시작 위치
+    
+    def print_hierarchy(self, lv = 0):
+        print("\t"*lv, self.name)
 
+        for child in self.children:
+            child.print_hierarchy(lv+1)
     
     def printall(self):
         print("name", self.name, "index", self.index, "parent", self.parent, "offset", self.offset, "link", self.link_transform_from_parent, "joint", self.joint_transform, "global", self.global_transform, "shape", self.shape_transform, "channels", self.channels, sep="\n")
         # print('childrens', self.children)
         for child in self.children:
             print(child.index)
+
+    def set_link_transform(self, link_transform):
+        self.link_transform_from_parent = link_transform
 
     def set_joint_transform(self, joint_transform):
         self.joint_transform = joint_transform
@@ -212,6 +223,7 @@ def load_bvh(filename):
             offset_values = line.split(' ')[1:]
             offset = [float(value) for value in offset_values]
             current_joint.offset = glm.vec3(offset)
+            current_joint.link_transform_from_parent = glm.vec3(offset)
         elif line.startswith('CHANNELS'):
             channel_values = line.split(' ')[2:]
             channels = [channel.upper() for channel in channel_values]
@@ -238,16 +250,18 @@ def load_bvh(filename):
 
     return root_joint, frames
 
-vao_start_index = 0
+
+# vao_start_index = 0
 def create_vao(root_joint, frames):
     global vao_start_index
     vao = glGenVertexArrays(1)
     glBindVertexArray(vao)
 
     vertices = []
+    # vertices = [glm.vec3(0,0,0), glm.vec3(0,0,0)]
     # process_joint(root_joint, frames, vertices)
 
-    vao_start_index = 0
+    # vao_start_index = 0
     process_joint(root_joint, vertices)
 
     print("vertices", vertices, sep="\n")
@@ -267,18 +281,37 @@ def create_vao(root_joint, frames):
 
     return vao, len(vertices)
 
-def process_joint(joint, vertices, parent_transform = glm.mat4()):
-    global vao_start_index
+def process_joint(joint, vertices):
+    # global vao_start_index
 
-    joint_transform = glm.mat4(parent_transform) * glm.translate(joint.offset)
-    joint.index = vao_start_index
-    vao_start_index += 2
+    print(f"{joint.name}'s link transform {joint.offset}")    
+    joint.set_link_transform(glm.translate(joint.offset))
+
+    # joint.index = vao_start_index
+    # vao_start_index += 2
+
     if joint != joint_manager.root_joint:
-        vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+        vertices.append((glm.translate(joint.offset) * glm.vec4(0, 0, 0, 1)).xyz)
     
     for child in joint.children:
-        vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
-        process_joint(child, vertices, joint_transform)
+        vertices.append(glm.vec3(0, 0, 0))
+        process_joint(child, vertices)
+# def process_joint(joint, vertices, parent_transform = glm.mat4()):
+#     global vao_start_index
+    
+#     joint.link_transform_from_parent = glm.translate(joint.offset)
+
+#     joint.index = vao_start_index
+#     vao_start_index += 2
+
+#     joint_transform = glm.mat4(parent_transform) * glm.translate(joint.offset)
+    
+#     if joint != joint_manager.root_joint:
+#         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+    
+#     for child in joint.children:
+#         vertices.append((joint_transform * glm.vec4(0, 0, 0, 1)).xyz)
+#         process_joint(child, vertices, joint_transform)
 
 def parse_joint_transform(joint, frame, joint_transform):
     for channel, value in zip(joint.channels, frame):
@@ -286,8 +319,7 @@ def parse_joint_transform(joint, frame, joint_transform):
         channel = channel.upper()
         value = float(value)
         if channel == 'XPOSITION':
-            # print("xxxx")
-            print("value", value)
+            # print("value", value)
             joint_transform = joint_transform * glm.translate((value, 0, 0))
             # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
         elif channel == 'YPOSITION':
@@ -306,144 +338,3 @@ def parse_joint_transform(joint, frame, joint_transform):
             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 0, 1))
             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
     return joint_transform
-# def process_joint(joint, frames, vertices, parent_transform=glm.mat4()):
-#     # 조인트의 변환 계산
-#     # joint_transform = parent_transform.copy()
-#     joint_transform = glm.mat4(parent_transform)
-#     if joint.channels:
-#         for frame in frames:
-#             apply_joint_transform(joint, frame, joint_transform)
-
-#     print(f"{joint.name}'s vertex... \n{joint_transform}")
-#     # 조인트의 버텍스 생성
-#     if joint.offset is not None:
-#         vertex = np.dot(joint_transform, [0, 0, 0, 1])[:3]
-#         vertices.append(vertex)
-
-#     # 자식 조인트 처리
-#     for child in joint.children:
-#         process_joint(child, frames, vertices, joint_transform)
-
-# def apply_joint_transform(joint, frame, joint_transform):
-#     for channel, value in zip(joint.channels, frame):
-#         print("c", channel, "v", value);
-#         if channel == 'Xposition':
-#             joint_transform = joint_transform * glm.translate((value, 0, 0))
-#             # joint_transform = np.dot(joint_transform, glm.translate((value, 0, 0)))
-#         elif channel == 'Yposition':
-#             joint_transform = joint_transform * glm.translate((0, value, 0))
-#             # joint_transform = np.dot(joint_transform, glm.translate((0, value, 0)))
-#         elif channel == 'Zposition':
-#             joint_transform = joint_transform * glm.translate((0, 0, value))
-#             # joint_transform = np.dot(joint_transform, glm.translate((0, 0, value)))
-#         elif channel == 'Xrotation':
-#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (1, 0, 0))
-#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (1, 0, 0)))
-#         elif channel == 'Yrotation':
-#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 1, 0))
-#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 1, 0)))
-#         elif channel == 'Zrotation':
-#             joint_transform = joint_transform * glm.rotate(glm.radians(value), (0, 0, 1))
-#             # joint_transform = np.dot(joint_transform, glm.rotate(glm.radians(value), (0, 0, 1)))
-
-
-
-
-
-
-# def _parse_indices(vertices, normals, indices):
-#     result = []
-#     for idx in indices:
-#         result.append(vertices[idx[0]])
-#         result.append(normals[idx[1]])
-#     return glm.array(np.array(result))
-
-# def _create_vao(vertices, normals, indices):
-#     result = _parse_indices(vertices, normals, indices)
-#     vao = glGenVertexArrays(1)
-#     glBindVertexArray(vao)
-
-#     vbo = glGenBuffers(1)
-#     glBindBuffer(GL_ARRAY_BUFFER, vbo)
-#     glBufferData(GL_ARRAY_BUFFER, result.nbytes, result.ptr, GL_STATIC_DRAW)
-#     glEnableVertexAttribArray(0)
-#     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * glm.sizeof(glm.float32), None)
-#     glEnableVertexAttribArray(1)
-#     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * glm.sizeof(glm.float32), ctypes.c_void_p(glm.sizeof(glm.float32) * 3))
-        
-#     glBindVertexArray(0)
-#     return vao, int(len(result) / 2)
-
-# class NodeManager:
-#     def __init__(self):
-#         self.hierarch_nodes = {}
-#         self.sigle_node = None
-#         self.single_mash_mode = True
-#         self.wire_frame_mode = False
-
-#     def append_node(self, name, parent, shape, color, vertices, normals, indices):
-#         self.hierarch_nodes[name] = Node(parent, shape, color, vertices, normals, indices)
-
-#     def set_single_node(self, parent, vertices, normals, indices):
-#         self.sigle_node = Node(parent, glm.mat4(), glm.vec3(1,1,1), vertices, normals, indices)
-
-#     def toggle_render_mode(self):
-#         self.single_mash_mode = not self.single_mash_mode
-#     def toggle_frame_mode(self):
-#         self.wire_frame_mode = not self.wire_frame_mode
-
-
-# node_manager = NodeManager();
-# class Node:
-#     def __init__(self, parent, shape_transform, color, vertices, normals, indices):
-#         # vao
-#         self.vao, self.length = _create_vao(vertices, normals, indices)
-#         # hierarchy
-#         self.parent = parent
-#         self.children = []
-#         if parent is not None:
-#             parent.children.append(self)
-
-#         # transform
-#         self.transform = glm.mat4()
-#         self.global_transform = glm.mat4()
-
-#         # shape
-#         self.shape_transform = shape_transform
-#         self.color = color
-
-#     def set_transform(self, transform):
-#         self.transform = transform
-
-#     def update_tree_global_transform(self):
-#         if self.parent is not None:
-#             self.global_transform = self.parent.get_global_transform() * self.transform
-#         else:
-#             self.global_transform = self.transform
-
-#         for child in self.children:
-#             child.update_tree_global_transform()
-
-#     def draw_node(self, VP, unif_locs):
-#         M = self.get_global_transform() * self.get_shape_transform()
-#         MVP = VP * M
-#         color = self.get_color()
-
-#         glBindVertexArray(self.vao)
-        
-#         glUniformMatrix4fv(unif_locs["M"], 1, GL_FALSE, glm.value_ptr(M))
-#         glUniformMatrix4fv(unif_locs["MVP"], 1, GL_FALSE, glm.value_ptr(MVP))
-#         glUniform3f(unif_locs["material_color"], color.r, color.g, color.b)
-#         glDrawArrays(GL_TRIANGLES, 0, self.length)
-    
-#     def get_vao(self):
-#         return self.vao
-#     def get_length(self):
-#         return self.length
-#     def get_global_transform(self):
-#         return self.global_transform
-#     def get_shape_transform(self):
-#         return self.shape_transform
-#     def get_color(self):
-#         return self.color
-

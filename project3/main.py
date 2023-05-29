@@ -26,7 +26,7 @@ void main()
     // 3D points in homogeneous coordinates
     vec4 p3D_in_hcoord = vec4(vin_pos.xyz, 1.0);
     gl_Position = MVP * p3D_in_hcoord;
-    vout_color = vec4(0.3, 1, 0.2, 1);
+    vout_color = vec4(1, 1, 0, 1);
 }
 
 '''
@@ -252,27 +252,15 @@ def main():
                 if newtime - joint_manager.oldtime >= joint_manager.frame_time:
                     joint_manager.oldtime = newtime
                     joint_manager.frow += 1
-                    print(joint_manager.frow)
+                    # print(joint_manager.frow)
                     if (joint_manager.frow >= joint_manager.frame_number):
                         joint_manager.frow = 0
                         joint_manager.reset_joint_transform(joint_manager.root_joint)
                         joint_manager.root_joint.update_tree_global_transform()
                     joint_manager.fcol = 0
-                    print(joint_manager.oldtime)
-                
-                # for child in joint_manager.children:
-                joint_manager.update_joint_transform(joint_manager.root_joint)
-                # MVP = P * V * node.get_global_transform() * node.get_shape_transform()
-                # for frame in joint_manager.frames:
-                # joint_transform = joint_manager.root_joint.joint_transform
-                # # print("before", joint_transform)
-                # joint_transform = parse_joint_transform(joint_manager.root_joint, joint_manager.frames[0][0:6], joint_transform)
-                # # print("after", joint_transform)
-                # joint_manager.root_joint.set_joint_transform(joint_transform)
-                # for child in joint_manager.root_joint:
-                
-                joint_manager.root_joint.update_tree_global_transform()
-                
+                    joint_manager.update_joint_transform(joint_manager.root_joint)
+                    joint_manager.root_joint.update_tree_global_transform()
+                    
                 joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
                 
                 # MVP = P * V * joint.get_global_transform() * joint.get_shape_transform()
@@ -282,11 +270,17 @@ def main():
                 # for idx in range(0, joint_manager.count, 2):
                 #     glDrawArrays(GL_LINES, idx, 2)
             else:
-                M = glm.mat4()
+                # M = glm.mat4()
+                joint_manager.reset_joint_transform(joint_manager.root_joint)
 
-                MVP = P * V * M
-                glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-                glDrawArrays(GL_LINES, 0, joint_manager.count)
+                joint_manager.root_joint.update_tree_global_transform()
+
+                joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
+                # for idx in range(0, joint_manager.count, 2):
+                #     MVP = P * V * 
+                #     glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+                #     glDrawArrays(GL_LINES, idx, 2)
+                # glDrawArrays(GL_LINES, 0, joint_manager.count)
             
         # swap front and back buffers
         glfwSwapBuffers(window)
