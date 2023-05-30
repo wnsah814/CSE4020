@@ -1,6 +1,6 @@
 from OpenGL.GL import *
 from glfw.GLFW import *
-
+import time
 from variables import global_cam, joint_manager
 
 def key_callback(window, key, scancode, action, mods):
@@ -18,7 +18,8 @@ def key_callback(window, key, scancode, action, mods):
                 # node_manager.toggle_frame_mode()
             elif key == GLFW_KEY_SPACE:
                 joint_manager.animate = not joint_manager.animate;
-                joint_manager.oldtime = glfwGetTime()
+                # joint_manager.oldtime = glfwGetTime()
+                joint_manager.oldtime = time.time()
                 joint_manager.frow = 0
                 joint_manager.fcol = 0
                 

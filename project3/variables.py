@@ -6,7 +6,7 @@ import os
 
 class Camera:
     def __init__(self):
-        self.distance = 15.0
+        self.distance = 500.0
         self.azimuth = glm.radians(135.)
         self.elevation = glm.radians(45.)
 
@@ -152,7 +152,8 @@ class JointManager:
 
         rotate = glm.rotate(angle, axis)
         
-        same = 0.025
+        # same = 0.025
+        same = 2
         
         M = joint.get_global_transform() * joint.get_shape_transform() * rotate *  glm.scale((same, 1, same)) * glm.scale((1,len / 2.001, 1)) * glm.translate((0, 1, 0))
         # M = joint.get_global_transform() * joint.get_shape_transform() * rotate * glm.scale((same, len/2, same))

@@ -11,6 +11,7 @@ from cursor_position_callback import *
 from scroll_callback import *
 from drop_callback import *
 from vao import *
+import time
 
 g_vertex_shader_src_pos = '''
 #version 330 core
@@ -225,7 +226,8 @@ def main():
             glBindVertexArray(joint_manager.vao)
 
             if joint_manager.animate:
-                newtime = glfwGetTime()
+                # newtime = glfwGetTime()
+                newtime = time.time()
                 if newtime - joint_manager.oldtime >= joint_manager.frame_time:
                     joint_manager.oldtime = newtime
                     joint_manager.frow += 1
