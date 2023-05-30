@@ -11,10 +11,10 @@ def key_callback(window, key, scancode, action, mods):
             if key==GLFW_KEY_V:
                 global_cam.toggle_projection()
             elif key == GLFW_KEY_1:
-                1
+                joint_manager.boxmode = False
                 # node_manager.toggle_render_mode()
             elif key == GLFW_KEY_2:
-                1
+                joint_manager.boxmode = True
                 # node_manager.toggle_frame_mode()
             elif key == GLFW_KEY_SPACE:
                 joint_manager.animate = not joint_manager.animate;

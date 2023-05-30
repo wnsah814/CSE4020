@@ -65,18 +65,18 @@ drag = Drag()
 
 
 
-def make_triangles(vertices):
-    new_vertices = []
-    for i in range(0, len(vertices), 2):
-        p1 = vertices[i]
-        p2 = vertices[i + 1]
-        new_vertices.append(p1.x - 1, p1.y, p1.z + 1)
-        new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
-        new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
+# def make_triangles(vertices):
+#     new_vertices = []
+#     for i in range(0, len(vertices), 2):
+#         p1 = vertices[i]
+#         p2 = vertices[i + 1]
+#         new_vertices.append(p1.x - 1, p1.y, p1.z + 1)
+#         new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
+#         new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
 
-        new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
-        new_vertices.append(p1.x + 1, p1.y, p1.z + 1)
-        new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
+#         new_vertices.append(p1.x + 1, p1.y, p1.z - 1)
+#         new_vertices.append(p1.x + 1, p1.y, p1.z + 1)
+#         new_vertices.append(p1.x - 1, p1.y, p1.z - 1)
 
 
 
@@ -92,6 +92,7 @@ class JointManager:
         self.vao = None
         self.count = 0          # len(vertices)
         self.animate = False    # is animate mode
+        self.boxmode = False    # is box rendering mode
         self.oldtime = 0        # for clock
         self.frow = 0           
         self.fcol = 0
@@ -118,6 +119,35 @@ class JointManager:
 
         for child in joint.children:
             self.update_joint_transform(child)
+    
+    def draw_box(self, joint, VP, unif_locs):
+        # scale = glm.length(joint.offset) * 0.5
+        # scale = glm.normalize(joint.offset) * 0.5
+        # scale = glm.scale((1, glm.length(joint.offset), 1)) * 0.5
+        # scale = glm.scale((0.1, 0.1, 0.1))
+        # print(joint.name, joint.offset, "offset")
+        # scale = 0.1
+
+        
+        # scale = glm.scale((0.5, 0.5, 0.5)) * glm.scale(glm.mat4(1.0), glm.normalize(joint.offset))
+
+        # scale = glm.mat4()
+        same = 0.05
+        
+        scale = glm.scale((same, 1, same)) * glm.scale((1, glm.length(joint.parent.offset if joint.parent is not None else glm.vec3(0,1,0)) ,1))
+        # M = joint.get_global_transform() * scale * joint.get_shape_transform()
+        M = joint.get_global_transform() * scale * joint.get_shape_transform()
+        # M = scale * joint.get_global_transform() * joint.get_shape_transform()
+
+
+        MVP = VP * M
+        glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
+        glUniformMatrix4fv(unif_locs['M'], 1, GL_FALSE, glm.value_ptr(M))
+        
+        glDrawArrays(GL_TRIANGLES, 0, 36)
+
+        for child in joint.children:
+            self.draw_box(child, VP, unif_locs)
 
     def draw(self, joint, VP, unif_locs):
 
@@ -229,7 +259,8 @@ def load_bvh(filename):
             offset_values = line.split()[1:]
             offset = [float(value) for value in offset_values]
             current_joint.offset = glm.vec3(offset)
-            current_joint.link_transform_from_parent = glm.vec3(offset)
+            # print(current_joint.name, glm.vec3(offset))
+            # current_joint.link_transform_from_parent = glm.vec3(offset)
         elif line.startswith('CHANNELS'):
             channel_values = line.split()[2:]
             channels = [channel.upper() for channel in channel_values]

@@ -68,7 +68,7 @@ void main()
     gl_Position = MVP * p3D_in_hcoord;
 
     vout_surface_pos = vec3(M * vec4(vin_pos, 1));
-    vout_normal = normalize( mat3(transpose(inverse(M))) * vin_normal);
+    vout_normal = normalize( mat3(inverse(transpose(M)) ) * vin_normal);
 }
 '''
 
@@ -89,22 +89,18 @@ g_fragment_shader_src_normal = '''
 #version 330 core
 
 in vec3 vout_surface_pos;
-in vec3 vout_normal;
+in vec3 vout_normal;  // interpolated normal
 
 out vec4 FragColor;
 
 uniform vec3 view_pos;
-uniform vec3 material_color;
 
-struct Light {
-    vec3 pos;
-    vec3 color;
-};
-
-vec3 calcLight(Light light) {
-    vec3 light_pos = light.pos;
-    vec3 light_color = light.color;
+void main()
+{
     // light and material properties
+    vec3 light_pos = vec3(-3,2,4);
+    vec3 light_color = vec3(1,1,1);
+    vec3 material_color = vec3(1,0,0);
     float material_shininess = 32.0;
 
     // light components
@@ -136,25 +132,6 @@ vec3 calcLight(Light light) {
     vec3 specular = spec * light_specular * material_specular;
 
     vec3 color = ambient + diffuse + specular;
-    return color;
-}
-
-void main()
-{
-    Light lights[4];
-    float light_power = 0.6;
-    lights[0] = Light(vec3(0, 25, 0), vec3(1, 1, 1) * light_power);
-    lights[1] = Light(vec3(0, -50, 0), vec3(1, 1, 1) * light_power);
-    lights[2] = Light(vec3(-25, -25, 25), vec3(1, 1, 1) * light_power);
-    lights[3] = Light(vec3(25, 25, -25), vec3(1, 1, 1) * light_power);
-    
-
-    vec3 color = vec3(0, 0, 0);
-
-    for (int i = 0; i < 4; ++i) {
-        color += calcLight(lights[i]);
-    }
-
     FragColor = vec4(color, 1.);
 }
 '''
@@ -225,7 +202,7 @@ def main():
 
     # prepare vaos
     vao_grid = prepare_vao_grid()
-    
+    vao_cube = prepare_vao_cube()
     # loop until the user closes the window
     while not glfwWindowShouldClose(window):
         # render
@@ -260,8 +237,16 @@ def main():
                     joint_manager.fcol = 0
                     joint_manager.update_joint_transform(joint_manager.root_joint)
                     joint_manager.root_joint.update_tree_global_transform()
-                    
-                joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
+                
+                if joint_manager.boxmode:
+                    glUseProgram(shader_normal)
+                    glBindVertexArray(vao_cube)
+                    glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)
+                    joint_manager.draw_box(joint_manager.root_joint, P * V, unif_locs_normal)
+                else:
+                    glUseProgram(shader_pos)
+                    glBindVertexArray(joint_manager.vao)
+                    joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
                 
                 # MVP = P * V * joint.get_global_transform() * joint.get_shape_transform()
                 # glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
@@ -274,8 +259,16 @@ def main():
                 joint_manager.reset_joint_transform(joint_manager.root_joint)
 
                 joint_manager.root_joint.update_tree_global_transform()
-
-                joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
+                
+                if joint_manager.boxmode:
+                    glUseProgram(shader_normal)
+                    glBindVertexArray(vao_cube)
+                    glUniform3f(unif_locs_normal['view_pos'], view_pos.x, view_pos.y, view_pos.z)
+                    joint_manager.draw_box(joint_manager.root_joint, P * V, unif_locs_normal)
+                else:
+                    glUseProgram(shader_pos)
+                    glBindVertexArray(joint_manager.vao)
+                    joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
                 # for idx in range(0, joint_manager.count, 2):
                 #     MVP = P * V * 
                 #     glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
