@@ -23,7 +23,7 @@ class Camera:
         return glm.lookAt(self.get_eye() + self.pan, self.center + self.pan, self.up)
     
     def get_projection_matrix(self): 
-        return glm.perspective(glm.radians(45.), 1., .1, 50.) if self.is_projection else glm.ortho(-self.distance / 2.45, self.distance / 2.45, -self.distance / 2.45, self.distance / 2.45, -50, 50)
+        return glm.perspective(glm.radians(45.), 1., .1, 1000.) if self.is_projection else glm.ortho(-self.distance / 2.45, self.distance / 2.45, -self.distance / 2.45, self.distance / 2.45, -50, 50)
 
     def toggle_projection(self):
         self.is_projection = not self.is_projection
@@ -38,8 +38,8 @@ class Camera:
         tmp_dist = self.distance + d
         if tmp_dist < 0.2: 
             tmp_dist = 0.2
-        elif tmp_dist > 40: 
-            tmp_dist = 40
+        elif tmp_dist > 1000: 
+            tmp_dist = 1000
         self.distance = tmp_dist
         
 global_cam = Camera()
@@ -132,14 +132,31 @@ class JointManager:
         # scale = glm.scale((0.5, 0.5, 0.5)) * glm.scale(glm.mat4(1.0), glm.normalize(joint.offset))
 
         # scale = glm.mat4()
-        same = 0.05
+        # same = 0.05
         
-        scale = glm.scale((same, 1, same)) * glm.scale((1, glm.length(joint.parent.offset if joint.parent is not None else glm.vec3(0,1,0)) ,1))
+        # # scale = glm.scale((same, 1, same)) * glm.scale((1, glm.length(joint.parent.offset if joint.parent is not None else glm.vec3(0,1,0)) ,1))
+        # scale = glm.scale((same, glm.length(joint.offset), same))
+        # M = joint.get_global_transform() * scale * glm.translate((0, 0.5, 0)) *joint.get_shape_transform()
         # M = joint.get_global_transform() * scale * joint.get_shape_transform()
-        M = joint.get_global_transform() * scale * joint.get_shape_transform()
+        # M = joint.link_transform_from_parent * scale  
         # M = scale * joint.get_global_transform() * joint.get_shape_transform()
+        len = glm.length(joint.offset)
+        vec1 = glm.normalize(glm.vec3(0, len, 0))
+        vec2 = glm.normalize(joint.offset)
 
+        dot = glm.dot(vec1, vec2)
+        cross = glm.cross(vec1, vec2)
 
+        axis = glm.normalize(cross)
+        angle = glm.acos(dot)
+
+        rotate = glm.rotate(angle, axis)
+        
+        same = 0.025
+        
+        M = joint.get_global_transform() * joint.get_shape_transform() * rotate *  glm.scale((same, 1, same)) * glm.scale((1,len / 2.001, 1)) * glm.translate((0, 1, 0))
+        # M = joint.get_global_transform() * joint.get_shape_transform() * rotate * glm.scale((same, len/2, same))
+        # print(joint.name ,M, sep="\n")
         MVP = VP * M
         glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
         glUniformMatrix4fv(unif_locs['M'], 1, GL_FALSE, glm.value_ptr(M))
