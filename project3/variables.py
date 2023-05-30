@@ -145,15 +145,19 @@ class JointManager:
         vec2 = glm.normalize(joint.offset)
 
         dot = glm.dot(vec1, vec2)
+
         cross = glm.cross(vec1, vec2)
+        print(joint.name, "cross", cross)
+        if glm.length(cross) == 0:
+            cross = glm.vec3(0, 1, 0)
 
         axis = glm.normalize(cross)
         angle = glm.acos(dot)
 
         rotate = glm.rotate(angle, axis)
         
-        # same = 0.025
-        same = 2
+        same = 0.025
+        # same = 2
         
         M = joint.get_global_transform() * joint.get_shape_transform() * rotate *  glm.scale((same, 1, same)) * glm.scale((1,len / 2.001, 1)) * glm.translate((0, 1, 0))
         # M = joint.get_global_transform() * joint.get_shape_transform() * rotate * glm.scale((same, len/2, same))
