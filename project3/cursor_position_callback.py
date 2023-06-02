@@ -10,7 +10,7 @@ def cursor_position_callback(window, xpos, ypos):
         dx, dy = drag_start_x - xpos , drag_start_y - ypos
         drag.set_position(xpos, ypos)
 
-        SCALER = 0.1
+        SCALER = 0.5
 
         if not dx == 0:
             global_cam.add_azi(glm.radians(dx * SCALER))
@@ -27,6 +27,6 @@ def cursor_position_callback(window, xpos, ypos):
         V = global_cam.get_view_matrix()
         V = glm.inverse(V)
         if not dx == 0:
-            global_cam.pan += V[0].xyz * 0.01 * dx
+            global_cam.pan += V[0].xyz * 0.5 * dx
         if not dy == 0:
-            global_cam.pan -= V[1].xyz * 0.01 * dy
+            global_cam.pan -= V[1].xyz * 0.5 * dy

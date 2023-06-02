@@ -2,8 +2,7 @@ from OpenGL.GL import *
 from glfw.GLFW import *
 import glm
 import numpy as np
-import os
-from variables import global_cam, joint_manager, parse_joint_transform
+from variables import global_cam, joint_manager
 from load_shaders import *
 from key_callback import *
 from mouse_button_callback import *
@@ -85,7 +84,6 @@ void main()
     FragColor = vout_color;
 }
 '''
-
 g_fragment_shader_src_normal = '''
 #version 330 core
 
@@ -99,7 +97,7 @@ uniform vec3 view_pos;
 void main()
 {
     // light and material properties
-    vec3 light_pos = vec3(-3,2,4);
+    vec3 light_pos = vec3(100, 100, 100);
     vec3 light_color = vec3(1,1,1);
     vec3 material_color = vec3(1,1,0);
     float material_shininess = 32.0;
@@ -140,9 +138,9 @@ void main()
 def draw_grid(vao, VP, unif_locs_color):
     M = glm.mat4()
 
-    GRID_START = -20
-    GRID_END = 21
-    GRID_STEP = 1
+    GRID_START = -100
+    GRID_END = 101
+    GRID_STEP = 5
 
     glBindVertexArray(vao)
     # X axis of grid
@@ -170,7 +168,7 @@ def main():
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE) # for macOS
 
     # create a window and OpenGL context
-    window = glfwCreateWindow(800, 800, '2021092379_project2', None, None)
+    window = glfwCreateWindow(800, 800, '2021092379_project3', None, None)
     if not window:
         glfwTerminate()
         return
@@ -196,7 +194,7 @@ def main():
         unif_locs_color[name] = glGetUniformLocation(shader_color, name)
 
     shader_normal = load_shaders(g_vertex_shader_src_normal, g_fragment_shader_src_normal)
-    unif_names = ['MVP', 'M', 'view_pos', 'material_color']
+    unif_names = ['MVP', 'M', 'view_pos']
     unif_locs_normal = {}
     for name in unif_names:
         unif_locs_normal[name] = glGetUniformLocation(shader_normal, name)
@@ -226,16 +224,14 @@ def main():
             glBindVertexArray(joint_manager.vao)
 
             if joint_manager.animate:
-                # newtime = glfwGetTime()
-                newtime = time.time()
+                newtime = glfwGetTime()
+                # newtime = time.time()
                 if newtime - joint_manager.oldtime >= joint_manager.frame_time:
+                    # print(newtime - joint_manager.oldtime, joint_manager.frame_time)
                     joint_manager.oldtime = newtime
                     joint_manager.frow += 1
-                    # print(joint_manager.frow)
                     if (joint_manager.frow >= joint_manager.frame_number):
                         joint_manager.frow = 0
-                        joint_manager.reset_joint_transform(joint_manager.root_joint)
-                        joint_manager.root_joint.update_tree_global_transform()
                     joint_manager.fcol = 0
                     joint_manager.update_joint_transform(joint_manager.root_joint)
                     joint_manager.root_joint.update_tree_global_transform()

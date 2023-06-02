@@ -82,10 +82,10 @@ def prepare_vao_grid():
     # prepare vertex data (in main memory)
     vertices = glm.array(glm.float32,
         # position        # color
-        -20.0, 0.0, 0.0,  1.0, 1.0, 1.0, # x-axis start
-        20.0, 0.0, 0.0,  1.0, 1.0, 1.0, # x-axis end 
-        0.0, 0.0, -20.0,  1.0, 1.0, 1.0, # z-axis start
-        0.0, 0.0, 20.0,  1.0, 1.0, 1.0, # z-axis end 
+        -100.0, 0.0, 0.0,  1.0, 1.0, 1.0, # x-axis start
+        100.0, 0.0, 0.0,  1.0, 1.0, 1.0, # x-axis end 
+        0.0, 0.0, -100.0,  1.0, 1.0, 1.0, # z-axis start
+        0.0, 0.0, 100.0,  1.0, 1.0, 1.0, # z-axis end 
     )
 
     # create and activate VAO (vertex array object)
