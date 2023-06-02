@@ -73,18 +73,7 @@ class JointManager:
     def set_root(self, root_joint, frames):
         self.root_joint = root_joint
         self.frames = frames
-
         self.vao, self.count = create_vao(root_joint)
-        
-    def update_joint_transform(self, joint):
-        joint_transform = joint.joint_transform
-        joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], glm.mat4())
-        joint.set_joint_transform(joint_transform)
-        
-        joint_manager.fcol += len(joint.channels)
-
-        for child in joint.children:
-            self.update_joint_transform(child)
     
     def draw_box(self, joint, VP, unif_locs):
         len = glm.length(joint.offset)
@@ -111,18 +100,27 @@ class JointManager:
         for child in joint.children:
             self.draw_box(child, VP, unif_locs)
 
-    def draw(self, joint, VP, unif_locs):
-
+    def draw_line(self, joint, VP, unif_locs):
         MVP = VP * joint.get_global_transform() * joint.get_shape_transform()
         glUniformMatrix4fv(unif_locs['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
         glDrawArrays(GL_LINES, self.draw_index, 2)
         self.draw_index += 2
 
         for child in joint.children:
-            self.draw(child, VP, unif_locs)
+            self.draw_line(child, VP, unif_locs)
 
         if joint == self.root_joint:
             self.draw_index = 0
+
+    def update_joint_transform(self, joint):
+        joint_transform = joint.joint_transform
+        joint_transform = parse_joint_transform(joint, joint_manager.frames[joint_manager.frow][joint_manager.fcol:joint_manager.fcol + len(joint.channels)], glm.mat4())
+        joint.set_joint_transform(joint_transform)
+        
+        joint_manager.fcol += len(joint.channels)
+
+        for child in joint.children:
+            self.update_joint_transform(child)
 
     def reset_joint_transform(self, joint):
         joint.set_joint_transform(glm.mat4())

@@ -10,7 +10,6 @@ from cursor_position_callback import *
 from scroll_callback import *
 from drop_callback import *
 from vao import *
-import time
 
 g_vertex_shader_src_pos = '''
 #version 330 core
@@ -225,9 +224,7 @@ def main():
 
             if joint_manager.animate:
                 newtime = glfwGetTime()
-                # newtime = time.time()
                 if newtime - joint_manager.oldtime >= joint_manager.frame_time:
-                    # print(newtime - joint_manager.oldtime, joint_manager.frame_time)
                     joint_manager.oldtime = newtime
                     joint_manager.frow += 1
                     if (joint_manager.frow >= joint_manager.frame_number):
@@ -244,18 +241,9 @@ def main():
                 else:
                     glUseProgram(shader_pos)
                     glBindVertexArray(joint_manager.vao)
-                    joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
-                
-                # MVP = P * V * joint.get_global_transform() * joint.get_shape_transform()
-                # glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-                
-                # glDrawArrays(GL_LINES, joint.index, 2)
-                # for idx in range(0, joint_manager.count, 2):
-                #     glDrawArrays(GL_LINES, idx, 2)
+                    joint_manager.draw_line(joint_manager.root_joint, P * V, unif_locs_pos)
             else:
-                # M = glm.mat4()
                 joint_manager.reset_joint_transform(joint_manager.root_joint)
-
                 joint_manager.root_joint.update_tree_global_transform()
                 
                 if joint_manager.boxmode:
@@ -266,13 +254,8 @@ def main():
                 else:
                     glUseProgram(shader_pos)
                     glBindVertexArray(joint_manager.vao)
-                    joint_manager.draw(joint_manager.root_joint, P * V, unif_locs_pos)
-                # for idx in range(0, joint_manager.count, 2):
-                #     MVP = P * V * 
-                #     glUniformMatrix4fv(unif_locs_pos['MVP'], 1, GL_FALSE, glm.value_ptr(MVP))
-                #     glDrawArrays(GL_LINES, idx, 2)
-                # glDrawArrays(GL_LINES, 0, joint_manager.count)
-            
+                    joint_manager.draw_line(joint_manager.root_joint, P * V, unif_locs_pos)
+
         # swap front and back buffers
         glfwSwapBuffers(window)
 
